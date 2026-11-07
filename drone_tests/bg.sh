@@ -5,6 +5,11 @@
 #   ~/team_ws/drone_tests/bg.sh pulse         15 % for 4 s, then off
 #   ~/team_ws/drone_tests/bg.sh log           show the output (run again until it says DONE)
 #
+#   ~/team_ws/drone_tests/bg.sh hover         PROPS ON flight: load hover.py (0.7 m, 5 s, land).
+#                                             Nothing flies until the pilot arms + flips to Position.
+#   ~/team_ws/drone_tests/bg.sh hoverlog      what the hover node is saying
+#   ~/team_ws/drone_tests/bg.sh restore       put the normal competitor launch back
+#
 # Extra options pass through to depth_motors.py, e.g.  bg.sh motors --farther-faster
 # It checks the drone is disarmed, stops the competitor window (flight_interface), runs the test,
 # then restarts the competitor window. Props off, drone held down, RC kill switch ready.
@@ -13,11 +18,22 @@ C=skybeta-stack
 E="source skybeta_env.sh >/dev/null 2>&1"
 
 case "${1:-}" in
+  hover)   # load the hover flight into the competitor window; the PILOT starts it (arm, then Position)
+    docker exec $C tmux respawn-window -k -t skybeta:competitor \
+      "bash -lc 'source skybeta_env.sh; ros2 launch /root/team_ws/drone_tests/hover.launch.py; exec bash'"
+    sleep 8
+    docker exec $C tmux capture-pane -p -J -t skybeta:competitor | grep -v '^$' | tail -4
+    echo "hover loaded. Pilot: arm on Altitude, then Position. Watch: $0 hoverlog   Undo: $0 restore"
+    exit 0 ;;
+  hoverlog) docker exec $C tmux capture-pane -p -J -t skybeta:competitor -S -200 | grep -v '^$' | grep -E 'hover_test|python3|LAND|ERROR|WARN' | tail -25; exit 0 ;;
+  restore)
+    docker exec $C tmux respawn-window -k -t skybeta:competitor "bash -lc 'source skybeta_env.sh; run_competitor.sh; exec bash'"
+    echo "competitor window back to COMPETITOR_PKG from drone.env"; exit 0 ;;
   log) tr '\r' '\n' < "$LOG" | grep -v '^$' | awk '!/centre/ || NR%5==0'; exit 0 ;;
   motors) shift; ARGS="--spin --props-off --seconds 15 $*" ;;
   pulse)  shift; ARGS="--pulse 0.15 --pulse-seconds 4 --spin --props-off $*" ;;
   run)    shift; ARGS="$*" ;;   # internal: the detached part
-  *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
 
 if [[ "${BG_CHILD:-}" != 1 ]]; then

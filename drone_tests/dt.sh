@@ -9,6 +9,10 @@
 #                                      dry run unless you add:  --spin --props-off
 #                                      stops the competitor window (flight_interface) first, and
 #                                      brings it back when done
+#   dt.sh pulse [THR] [options]        PROPS OFF: motors on at THR (default 0.10) for 2 s, then off
+#                                      dry run unless you add:  --spin --props-off
+#   Both log the VIO + PX4 position estimate (should stay ~0: the drone stands still) to
+#   ~/team_ws/drone_tests/runs/<time>_{motors,pulse}.csv and print how far it moved.
 #
 # The RC kill switch is always the real emergency stop.
 set -uo pipefail
@@ -103,9 +107,9 @@ cmd_camera() {
 
 cmd_motors() {
   stack_up || die "stack is not running"
-  has_depth || die "no depth topic: run 'dt.sh camera depth' first"
-  local spin=0
-  for x in "$@"; do [[ "$x" == --spin ]] && spin=1; done
+  local spin=0 pulse=0
+  for x in "$@"; do [[ "$x" == --spin ]] && spin=1; [[ "$x" == --pulse ]] && pulse=1; done
+  [[ $pulse -eq 1 ]] || has_depth || die "no depth topic: run 'dt.sh camera depth' first"
   if [[ $spin -eq 1 ]]; then
     require_disarmed
     cat <<'EOM'
@@ -120,6 +124,7 @@ EOM
     trap 'competitor_restart' EXIT
   fi
   docker exec -it "$CONTAINER" bash -c "source skybeta_env.sh >/dev/null 2>&1; python3 $DT_C/depth_motors.py $*"
+  docker exec "$CONTAINER" chown -R "$(id -u):$(id -g)" "$DT_C/runs" 2>/dev/null || true   # container writes as root
 }
 
 cmd="${1:-}"; shift || true
@@ -127,6 +132,7 @@ case "$cmd" in
   status) cmd_status ;;
   camera) cmd_camera "$@" ;;
   motors) cmd_motors "$@" ;;
+  pulse)  thr="${1:-0.10}"; shift || true; cmd_motors --pulse "$thr" "$@" ;;
   ""|-h|--help|help) usage ;;
   *) usage; exit 2 ;;
 esac

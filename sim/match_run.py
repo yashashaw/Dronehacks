@@ -45,7 +45,7 @@ PAD = (-2.04, -0.79)
 # (cx, cy, solid_wall_target_depth_m or None)
 WAYPOINTS = [
     (-2.51, 2.58, None),   # Leg 1: North up start corridor (midpoint between M1=2.12 and Net=3.05)
-    (-1.38, 2.58, 0.52),   # Leg 2 (stop 0.52 from M2 = M1-M2 lane centre; 0.62 put Leg 3 at 0.27 m from M1, run_010): East over M1 -> solid wall anchor on M2 (x=-0.86, clears M1 top tip)
+    (-1.34, 2.58, 0.48),   # Leg 2 (stop 0.48 from M2; Corner-2 turns drift ~0.1 m west toward M1's tip, runs 010-012): East over M1 -> solid wall anchor on M2 (x=-0.86, clears M1 top tip)
     (-1.42, 1.09, 0.58),   # Leg 3 (stop 0.58 from Barrier 2): SSW down M1-M2 -> solid wall anchor on Barrier 2 (y=+0.51, clears M2 bottom tip)
     (-0.37, 1.00, 0.62),   # Leg 4 (stop 0.62 from M3): East under M2 -> solid wall anchor on M3 at 0.58 m (keeps M3 edges in FOV)
     (-0.22, 2.58, None),   # Leg 5: NNE up M2-M3 lane (clears M3 top tip)
@@ -519,7 +519,7 @@ def main():
                                 des_lat = max(-LAT_CAP, min(LAT_CAP, lat_pos + w_lat))
                                 lat_corr += max(-LAT_STEP, min(LAT_STEP, 0.25 * (des_lat - lat_corr)))
                         # (B) Lag-free side-wall protection referenced to actual drone position `lat_pos`
-                        if hdg_ok and 0.05 < along < L - 0.25 and i != 0 and not is_win:
+                        if hdg_ok and along < L - 0.25 and i != 0 and not is_win:
                             delta_lat = None
                             if l_d is not None and r_d is not None and l_d < 0.75 and r_d < 0.75:
                                 delta_lat = 0.5 * (r_d - l_d)

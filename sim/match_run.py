@@ -45,7 +45,7 @@ PAD = (-2.04, -0.79)
 # (cx, cy, solid_wall_target_depth_m or None)
 WAYPOINTS = [
     (-2.51, 2.58, None),   # Leg 1: North up start corridor (midpoint between M1=2.12 and Net=3.05)
-    (-1.48, 2.58, 0.62),   # Leg 2 (stop 0.62 from M2: less wall filling the view at the turn): East over M1 -> solid wall anchor on M2 (x=-0.86, clears M1 top tip)
+    (-1.38, 2.58, 0.52),   # Leg 2 (stop 0.52 from M2 = M1-M2 lane centre; 0.62 put Leg 3 at 0.27 m from M1, run_010): East over M1 -> solid wall anchor on M2 (x=-0.86, clears M1 top tip)
     (-1.42, 1.09, 0.58),   # Leg 3 (stop 0.58 from Barrier 2): SSW down M1-M2 -> solid wall anchor on Barrier 2 (y=+0.51, clears M2 bottom tip)
     (-0.37, 1.00, 0.62),   # Leg 4 (stop 0.62 from M3): East under M2 -> solid wall anchor on M3 at 0.58 m (keeps M3 edges in FOV)
     (-0.22, 2.58, None),   # Leg 5: NNE up M2-M3 lane (clears M3 top tip)
@@ -53,7 +53,7 @@ WAYPOINTS = [
     ( 2.31, 1.80, None),   # Leg 7: Align with Tube north entrance (x=2.31)
     ( 2.31,-0.75, None),   # Leg 8: South through Tube (center x=2.31)
     ( 1.40,-1.80, None),   # Leg 9: SW, clear of C1 south tip (0.93,-1.11)
-    ( 0.37,-2.58, None),   # Leg 10: WSW to the window approach point, 0.9 m east of the window
+    ( 0.235,-2.525, None), # Leg 10: window approach on the window axis 0.75 m out (0.42 m from Boulder 3 at 0.76 m height)
     (-0.89,-2.12, 'WINDOW'),  # Leg 11: through the C2a window, heading -70 deg (perpendicular), at 0.76 m
     (-2.04,-0.79, None),   # Leg 12: NW onto Landing Pad center (-2.04, -0.79), back at 1.0 m
 ]

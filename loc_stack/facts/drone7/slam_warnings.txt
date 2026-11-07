@@ -1,0 +1,15 @@
+lines: 1144
+warn/lost/jitter counts:
+  lost: 0
+  jitter: 0
+  WARN: 163
+  ERROR: 0
+  reinit: 0
+  failed: 0
+last 6 WARN/ERROR lines:
+[component_container_mt-3] [WARN] [1794030016.483058224] [visual_slam_node]: Del
+[component_container_mt-3] [WARN] [1794030016.690171344] [visual_slam_node]: Del
+[component_container_mt-3] [WARN] [1794030017.169338192] [visual_slam_node]: Del
+[component_container_mt-3] [WARN] [1794030026.968947056] [visual_slam_node]: Del
+[component_container_mt-3] [WARN] [1794030031.738927600] [visual_slam_node]: Del
+[component_container_mt-3] [WARN] [1794030045.256703184] [visual_slam_node]: Del

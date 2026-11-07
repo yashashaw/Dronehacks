@@ -1,0 +1,28 @@
+{
+  "run": "sample_runs/live_test",
+  "duration_s": 19.9,
+  "odom_rows": 603,
+  "odom_rate_hz": 30.4,
+  "max_odom_gap_ms": 100,
+  "tracking_state_changes": [
+    [
+      0.2081,
+      1
+    ]
+  ],
+  "tracking_lost_events": 0,
+  "path_length_m": 0.0,
+  "height_span_m": 0.008,
+  "dwells": [
+    {
+      "t0": 0.2,
+      "dur_s": 19.9,
+      "jitter_m": 0.0097,
+      "pos": [
+        0.457,
+        0.144,
+        -0.256
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+9:# There is deliberately NO `stereo:` block here. With i_pipeline_type: depth the driver
+11:# used to live under `stereo:` (i_publish_left_rect, i_publish_right_rect,
+24:    stereo:
+31:      i_pipeline_type: depth
+115:            'params_file': '/root/team_ws/loc_stack/oakd_vslam_depth.yaml',
+== topics now (depth/stereo/rect)
+/oak/left/image_raw/compressedDepth
+/oak/right/image_raw/compressedDepth
+/oak/stereo/camera_info
+/oak/stereo/image_raw
+/oak/stereo/image_raw/compressed
+/oak/stereo/image_raw/compressedDepth
+/oak/stereo/image_raw/theora
+-- /oak/stereo/image_raw
+average rate: 28.504
+-- /oak/left/image_raw
+average rate: 15.211
+-- /oak/right/image_raw
+average rate: 22.778
+-- /visual_slam/tracking/odometry
+average rate: 28.281
+depth msg: 320x200 encoding=16UC1 frame=oak_rgb_camera_optical_frame
+valid pixels: 38.8%  depth m  min 0.32  p5 0.32  median 0.35  p95 7.43  max 13.66
+END

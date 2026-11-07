@@ -1,0 +1,16 @@
+## /oak/left/image_raw
+average rate: 25.862
+	min: 0.007s max: 0.153s std dev: 0.02234s window: 212
+## /oak/right/image_raw
+average rate: 25.512
+	min: 0.007s max: 0.366s std dev: 0.03107s window: 207
+## /oak/imu/data
+average rate: 199.853
+	min: 0.000s max: 0.032s std dev: 0.00581s window: 1604
+## /visual_slam/tracking/odometry
+average rate: 31.019
+	min: 0.002s max: 0.312s std dev: 0.03751s window: 256
+## /visual_slam/vis/slam_odometry
+average rate: 31.602
+	min: 0.000s max: 0.345s std dev: 0.06086s window: 211
+## /visual_slam/vis/landmarks_cloud

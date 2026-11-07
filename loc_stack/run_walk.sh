@@ -35,6 +35,7 @@ case "$1" in
     for f in odom.csv status.csv lpos.csv DONE; do
       retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$DRONE:team_ws/walk_runs/$NAME/$f" "$HERE/runs/$NAME/" 2>/dev/null
     done
-    python "$HERE/analyze_walk.py" "$HERE/runs/$NAME" "$@" ;;
+    python "$HERE/analyze_walk.py" "$HERE/runs/$NAME" "$@"
+    python "$HERE/plot_walk.py" "$HERE/runs/$NAME" "$@" && echo "open: $HERE/runs/$NAME/map.html" ;;
   *) sed -n 2,9p "$0" ;;
 esac

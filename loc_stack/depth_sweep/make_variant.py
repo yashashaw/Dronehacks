@@ -28,6 +28,24 @@ VARIANTS = {
     'd_20fps':    {**DEPTH_BASE, 'left.i_fps': 20.0, 'right.i_fps': 20.0},
     'd_fastd':    {**DEPTH_BASE, 'stereo.i_depth_preset': 'FAST_DENSITY'},
 }
+VARIANTS.update({
+    'd_25fps':    {**DEPTH_BASE, 'left.i_fps': 25.0, 'right.i_fps': 25.0},
+    'd_15fps':    {**DEPTH_BASE, 'left.i_fps': 15.0, 'right.i_fps': 15.0},
+    'd_640':      {**DEPTH_BASE, 'left.i_width': 640, 'left.i_height': 400,
+                   'right.i_width': 640, 'right.i_height': 400},
+    'fps20':      {'left.i_fps': 20.0, 'right.i_fps': 20.0},
+    'r960':       {'left.i_width': 960, 'left.i_height': 600,
+                   'right.i_width': 960, 'right.i_height': 600},
+})
+VARIANTS.update({
+    # 2026-11-07: B1 from the driver-only bench, sharp depth for wall ranging
+    'd_640s':     {**DEPTH_BASE, 'left.i_width': 640, 'left.i_height': 400,
+                   'right.i_width': 640, 'right.i_height': 400,
+                   'stereo.i_width': 640, 'stereo.i_height': 400, 'stereo.i_subpixel': True},
+})
+# None = remove the key (driver default). i_depth_preset DEFAULT decimates depth to 320x200;
+# unset, the driver uses FAST_ACCURACY at 640x400. The deployed setting is d_640s+nopreset.
+VARIANTS['nopreset'] = {'stereo.i_depth_preset': None}
 # combos are added on the command line as a+b (e.g. d_q2+d_nolr)
 
 
@@ -48,7 +66,10 @@ def main():
     params = next(iter(cfg.values()))['ros__parameters']
     for key, val in overrides(name).items():
         sec, k = key.split('.')
-        params.setdefault(sec, {})[k] = val
+        if val is None:
+            params.get(sec, {}).pop(k, None)   # None = remove the key (driver default)
+        else:
+            params.setdefault(sec, {})[k] = val
     os.makedirs(out, exist_ok=True)
     safe = name.replace('+', '__')
     yp = f'{out}/{safe}.yaml'

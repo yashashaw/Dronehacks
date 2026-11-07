@@ -1,0 +1,29 @@
+/oak:
+  ros__parameters:
+    driver:
+      i_enable_ir: false
+    pipeline_gen:
+      i_pipeline_type: depth
+      i_enable_imu: true
+      i_nn_type: none
+    left:
+      i_publish_topic: false
+      i_enable_lazy_publisher: false
+      i_width: 640
+      i_height: 400
+      i_fps: 30.0
+    right:
+      i_publish_topic: false
+      i_enable_lazy_publisher: false
+      i_width: 640
+      i_height: 400
+      i_fps: 30.0
+    stereo:
+      i_left_rect_publish_topic: true
+      i_right_rect_publish_topic: true
+      i_subpixel: true
+      i_enable_lazy_publisher: false
+    imu:
+      i_acc_freq: 200
+      i_gyro_freq: 200
+      i_message_type: IMU

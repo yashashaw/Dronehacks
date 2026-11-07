@@ -22,3 +22,6 @@ Dockerfile* text eol=lf
 *.mcap binary
 *.patch   text eol=lf
 *.diff    text eol=lf
+*.env     text eol=lf
+*.conf    text eol=lf
+*_slam_profile text eol=lf

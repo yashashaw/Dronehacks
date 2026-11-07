@@ -7,6 +7,9 @@ Branch `drone-field-tests`. Everything from the 2026-11-07 session on drone 7:
 > **Read `team_ws/F1_CLIMB_INCIDENT.md` first.** F1 climbed nearly to the ceiling on its first
 > flight. Do not fly autonomously until that is understood and fixed.
 
+Every drone-side setting from drone 7 (drone.env, autostart switch, camera mode, the running
+camera config, camera benchmark configs, measured results): **`drone7_config/`**.
+
 ## 0. Get the code
 
 ```

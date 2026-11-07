@@ -17,6 +17,7 @@ from sensing import (Estimator, EstimatorParams, SensorParams, Vehicle, VehicleP
 HERE = os.path.dirname(os.path.abspath(__file__))
 OBJ = os.path.join(HERE, "..", "dronehacks-course-v3.obj")
 LAUNCH, PAD = (-2.515, 0.914), (-2.042, -0.792)
+WINDOW_CENTRE = (-0.47, -2.27)   # metric only: did the flight cross the window?
 PAD_RADIUS = 0.762      # outer ring, 30 in
 DT = 1 / 15             # sensor rate
 TIME_LIMIT = 180.0
@@ -66,7 +67,7 @@ def fly(world, seed, nav_params=None, sensor=None, est=None, veh=None, verbose=F
             print(f"t={t:5.1f} pos=({drone.pos[0]:.2f},{drone.pos[1]:.2f}) {nav.status}")
     length = sum(math.dist(a, b) for a, b in zip(trail, trail[1:]))
     return dict(seed=seed, result=result, time=t, scored=t + TOUCH_PENALTY * touches, touches=touches,
-                hits=hits, length=length, drift=math.hypot(estimator.tx, estimator.ty),
+                hits=hits, via_window=any(math.dist(p, WINDOW_CENTRE) < 0.35 for p in trail), length=length, drift=math.hypot(estimator.tx, estimator.ty),
                 yaw_err=math.degrees(estimator.theta), nav=nav, trail=trail)
 
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
         run = fly(world, seed)
         print(f"seed {seed}: {run['result']:8} {run['time']:5.1f}s +{run['touches']} touches "
               f"= {run['scored']:5.1f}s  path {run['length']:4.1f} m  drift {run['drift']:.2f} m "
-              f"yaw {run['yaw_err']:+.1f} deg  (wall {time.time() - t0:.0f}s)", flush=True)
+              f"yaw {run['yaw_err']:+.1f} deg  window={run['via_window']}  (wall {time.time() - t0:.0f}s)", flush=True)
         if run["hits"]:
             print("   touches at", run["hits"])
         render(world, run, os.path.join(HERE, f"closed_loop_{seed}.png"))

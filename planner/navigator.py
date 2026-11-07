@@ -25,6 +25,10 @@ class NavParams:
     stickiness: float = 0.8        # cost credit for keeping the current frontier
     max_candidates: int = 6
     pad_stop: float = 0.25
+    rep_gain: float = 0.8          # m/s push away from returns closer than rep_dist (0 = off)
+    rep_dist: float = 0.5          # centre-to-obstacle distance where the push starts
+    rep_min: float = 0.25          # distance at which the push is at full gain
+    rep_norm: float = 8.0          # a wall seen by many rays should not push harder
 
 
 class Navigator:
@@ -192,6 +196,30 @@ class Navigator:
         v = math.sqrt(2 * p.a_brake * max(0.0, free - p.stop_margin))
         return min(p.v_max, v, dist_left + 0.1) * math.cos(off)
 
+    def _repel(self, yaw, returns):
+        """Push away from nearby returns. Uses only the current frame in the camera frame,
+        so pose drift and map errors cannot affect it."""
+        p = self.p
+        if p.rep_gain <= 0:
+            return 0.0, 0.0
+        rs = sorted(returns)
+        px = py = 0.0
+        for i, (b, r) in enumerate(rs):
+            if r >= p.rep_dist:
+                continue
+            # a lone return (noise, outlier) has no neighbour at a similar range: ignore it
+            if not any(j != i and abs(rs[j][0] - b) < math.radians(6) and abs(rs[j][1] - r) < 0.25
+                       for j in range(max(0, i - 2), min(len(rs), i + 3))):
+                continue
+            w = min(1.0, (p.rep_dist - r) / (p.rep_dist - p.rep_min))
+            px -= w * math.cos(yaw + b)
+            py -= w * math.sin(yaw + b)
+        k = p.rep_gain / p.rep_norm
+        mag = math.hypot(px, py) * k
+        if mag > p.rep_gain:
+            k *= p.rep_gain / mag
+        return px * k, py * k
+
     def step(self, pose, returns, pad_obs):
         """Returns (vx, vy) in the estimate frame and the yaw to face."""
         x, y, yaw = pose
@@ -215,4 +243,5 @@ class Navigator:
         tx, ty = self._carrot(x, y)
         heading = math.atan2(ty - y, tx - x)
         v = self._speed(heading, yaw, returns, math.dist((x, y), self.path[-1]))
-        return (v * math.cos(heading), v * math.sin(heading)), heading
+        rx, ry = self._repel(yaw, returns)
+        return (v * math.cos(heading) + rx, v * math.sin(heading) + ry), heading

@@ -1,0 +1,148 @@
+﻿[WARN] [1794077954.611987067] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794077954.612000097] [rcl]: 'localhost_only' is disabled, 'automatic_discovery_range' and 'static_peers' will be used.
+[stage23] WP start NED=(-0.00, 0.00, 0.06) heading=-0.00; 12 waypoints (no time limit)
+[stage23] WP scan matcher ON
+[stage23] WP leg 1 -> course (-2.51, 2.58), 1.67 m, heading 0 deg, anchor=none
+[stage23] WP t= 0.4 leg 1 c=(-2.56,0.84) yaw=  -0 s=-0.07/1.67 F=2.66 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 2.4 leg 1 c=(-2.53,0.92) yaw=  -0 s=0.01/1.67 F=2.45 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 4.4 leg 1 c=(-2.57,1.08) yaw=   0 s=0.17/1.67 F=2.66 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 6.5 leg 1 c=(-2.57,1.25) yaw=   0 s=0.34/1.67 F=2.66 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 8.5 leg 1 c=(-2.54,1.45) yaw=  -0 s=0.54/1.67 F=2.45 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=10.5 leg 1 c=(-2.54,1.67) yaw=   0 s=0.76/1.67 F=2.28 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=12.5 leg 1 c=(-2.52,1.89) yaw=   0 s=0.98/1.67 F=2.12 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=14.6 leg 1 c=(-2.51,2.14) yaw=  -0 s=1.23/1.67 F=1.87 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=16.6 leg 1 c=(-2.51,2.40) yaw=   0 s=1.49/1.67 F=1.68 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP leg 1 reached: course=(-2.53, 2.50) F=1.52 dcorr=+0.00 lcorr=+0.00 t=18.0
+[stage23] WP leg 2 -> course (-1.32, 2.58), 1.19 m, heading 90 deg, anchor=0.46m
+[stage23] WP match post-turn 2 pts=24 stiff=1 d=(+0.08,+0.00) dh=+2.3 cost=0.0000 -> theta=+0.0 off=(-0.00,-0.03)
+[stage23] WP t=28.2 leg 2 c=(-2.43,2.58) yaw=  88 s=0.05/1.16 F=1.52 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=30.2 leg 2 c=(-2.37,2.58) yaw=  88 s=0.11/1.16 F=1.52 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP match leg 2 pts=23 stiff=2 d=(-0.01,+0.17) dh=+1.1 cost=0.0000 -> theta=+0.0 off=(-0.12,-0.08)
+[stage23] WP t=32.3 leg 2 c=(-2.13,2.77) yaw=  89 s=0.35/1.16 F=1.33 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=34.3 leg 2 c=(-1.85,2.69) yaw=  90 s=0.63/1.16 F=1.03 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP match leg 2 pts=25 stiff=1 d=(+0.08,+0.00) dh=+2.7 cost=0.0002 -> theta=+0.0 off=(-0.24,-0.11)
+[stage23] WP t=36.3 leg 2 c=(-1.60,2.57) yaw=  90 s=0.88/1.16 F=0.80 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=38.4 leg 2 c=(-1.36,2.60) yaw=  90 s=1.12/1.16 F=0.55 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP leg 2 reached: course=(-1.30, 2.60) F=0.48 dcorr=+0.00 lcorr=+0.00 t=38.9
+[stage23] WP leg 3 -> course (-1.38, 0.97), 1.61 m, heading -178 deg, anchor=0.46m
+[stage23] WP POSITION LOST (estimator invalid): holding setpoint, waiting for recovery
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (10 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (11 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (20 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (21 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (30 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (31 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (40 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP still waiting for the estimator (41 s), not landing
+[stage23] WP leg 4 -> course (-0.34, 0.97), 1.88 m, heading 149 deg, anchor=0.58m
+[stage23] WP heading jump -3.5 deg -> ignored (total -3 deg)
+[stage23] WP position jump 290.84 m (TURN/RECOV: n +115.26 e -267.03) -> ignored, total off=(+114.89, -267.01)
+[stage23] WP position jump 0.05 m (TURN/RECOV: n -0.04 e -0.04) -> ignored, total off=(+114.85, -267.05)
+[stage23] WP position jump 0.12 m (TURN/RECOV: n -0.08 e -0.09) -> ignored, total off=(+114.77, -267.14)
+[stage23] WP position jump 0.10 m (TURN/RECOV: n -0.06 e -0.07) -> ignored, total off=(+114.71, -267.21)
+[stage23] WP position jump 0.06 m (TURN/RECOV: n -0.04 e -0.05) -> ignored, total off=(+114.67, -267.26)
+[stage23] WP position jump 0.04 m (TURN/RECOV: n -0.03 e -0.03) -> ignored, total off=(+114.64, -267.29)
+[stage23] WP position jump 0.10 m (TURN/RECOV: n -0.06 e -0.07) -> ignored, total off=(+114.58, -267.37)
+[stage23] WP position jump 0.10 m (TURN/RECOV: n -0.06 e -0.08) -> ignored, total off=(+114.52, -267.44)
+[stage23] WP position jump 0.11 m (TURN/RECOV: n -0.06 e -0.08) -> ignored, total off=(+114.46, -267.53)
+[stage23] WP position jump 0.07 m (TURN/RECOV: n -0.04 e -0.06) -> ignored, total off=(+114.41, -267.58)
+[stage23] WP position jump 0.06 m (TURN/RECOV: n -0.04 e -0.05) -> ignored, total off=(+114.38, -267.63)
+[stage23] WP position jump 0.04 m (TURN/RECOV: n -0.03 e -0.04) -> ignored, total off=(+114.35, -267.67)
+[stage23] WP position jump 0.07 m (TURN/RECOV: n -0.04 e -0.06) -> ignored, total off=(+114.31, -267.73)
+[stage23] WP position jump 0.08 m (TURN/RECOV: n -0.05 e -0.07) -> ignored, total off=(+114.26, -267.79)
+[stage23] WP position jump 0.07 m (TURN/RECOV: n -0.04 e -0.05) -> ignored, total off=(+114.22, -267.85)
+[stage23] WP position jump 0.07 m (TURN/RECOV: n -0.04 e -0.06) -> ignored, total off=(+114.18, -267.91)
+[stage23] WP position jump 0.04 m (TURN/RECOV: n -0.03 e -0.04) -> ignored, total off=(+114.16, -267.94)
+[stage23] WP position jump 0.06 m (TURN/RECOV: n -0.03 e -0.05) -> ignored, total off=(+114.12, -267.99)
+[stage23] WP position jump 0.04 m (TURN/RECOV: n -0.02 e -0.04) -> ignored, total off=(+114.10, -268.03)
+[stage23] WP position jump 0.08 m (TURN/RECOV: n -0.04 e -0.06) -> ignored, total off=(+114.05, -268.09)
+[stage23] WP position jump 0.05 m (TURN/RECOV: n -0.03 e -0.04) -> ignored, total off=(+114.02, -268.13)
+[stage23] WP position jump 0.06 m (TURN/RECOV: n -0.04 e -0.05) -> ignored, total off=(+113.99, -268.18)
+[stage23] WP position jump 0.11 m (TURN/RECOV: n -0.06 e -0.09) -> ignored, total off=(+113.92, -268.28)
+[stage23] WP position jump 0.05 m (TURN/RECOV: n -0.03 e -0.04) -> ignored, total off=(+113.89, -268.32)
+[stage23] WP position jump 0.08 m (TURN/RECOV: n -0.05 e -0.07) -> ignored, total off=(+113.84, -268.38)
+[stage23] WP position jump 0.07 m (TURN/RECOV: n -0.04 e -0.06) -> ignored, total off=(+113.80, -268.44)
+[stage23] WP position jump 0.11 m (TURN/RECOV: n -0.06 e -0.09) -> ignored, total off=(+113.74, -268.53)
+[stage23] WP position jump 0.16 m (TURN/RECOV: n -0.10 e -0.13) -> ignored, total off=(+113.64, -268.66)
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (60 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP still waiting for the estimator (61 s), not landing
+[stage23] WP error: disarmed in flight
+[stage23] WP NOT landing: not on the pad (error: disarmed in flight)
+[stage23] WP RESULT: error: disarmed in flight | landed=True | final course=n/a | total off=(+113.64, -268.66)
+

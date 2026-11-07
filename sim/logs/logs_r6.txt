@@ -1,0 +1,21 @@
+﻿[WARN] [1794075954.754269455] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794075954.754283865] [rcl]: 'localhost_only' is disabled, 'automatic_discovery_range' and 'static_peers' will be used.
+[stage23] DS start NED=(-0.00, 0.00, 0.06) heading=-0.00; 12 moves
+[stage23] DS move 1: turn=+0 odo 1.67 | N up start corridor to y=2.58 (net ahead: invisible to depth)
+[stage23] DS t=  0.0 m1 trav=0.00 F=2.64 L=-- R=0.52 vf=0.25 vl=+0.00 yaw=0
+[stage23] DS t=  2.0 m1 trav=0.12 F=2.88 L=-- R=-- vf=0.25 vl=+0.00 yaw=0
+[stage23] DS t=  4.1 m1 trav=0.40 F=2.65 L=-- R=-- vf=0.25 vl=+0.00 yaw=-0
+[stage23] DS t=  6.1 m1 trav=0.73 F=2.43 L=-- R=-- vf=0.25 vl=+0.00 yaw=-0
+[stage23] DS t=  8.2 m1 trav=1.11 F=2.11 L=-- R=-- vf=0.25 vl=+0.00 yaw=-0
+[stage23] DS t= 10.2 m1 trav=1.57 F=1.74 L=-- R=0.41 vf=0.11 vl=-0.03 yaw=6
+[stage23] DS move 1 done: trav=1.81 F=1.57 L=-- R=0.40 t=11.1
+[stage23] DS move 2: turn=+90 wall 0.46 | E over M1 tip, stop 0.46 before M2 (x=-1.32)
+[stage23] DS heading estimate jumped +15 deg (not absorbed)
+[stage23] DS heading estimate jumped -25 deg (not absorbed)
+[stage23] DS heading estimate jumped -103 deg (not absorbed)
+[stage23] DS heading estimate jumped +18 deg (not absorbed)
+[stage23] DS check right: open ahead (F=0.41)
+[stage23] DS error: position lost > 5s
+[stage23] DS landing (error: position lost > 5s)
+[stage23] DS RESULT: error: position lost > 5s | landed=True | elapsed 55 s
+

@@ -1,0 +1,25 @@
+﻿[WARN] [1794075611.394263635] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794075611.394276115] [rcl]: 'localhost_only' is disabled, 'automatic_discovery_range' and 'static_peers' will be used.
+[stage23] CR start NED=(-0.00, 0.00, 0.04) heading=0.00; 12 moves
+[stage23] CR move 1: turn=+0 odo 1.67 | N up start corridor to y=2.58 (net ahead: invisible to depth)
+[stage23] CR t=  0.0 m1 trav=0.00 F=2.64 L=-- R=0.53 vf=0.25 vl=+0.00 yaw=0
+[stage23] CR t=  2.0 m1 trav=0.10 F=2.88 L=-- R=-- vf=0.25 vl=+0.00 yaw=0
+[stage23] CR t=  4.1 m1 trav=0.40 F=2.65 L=-- R=-- vf=0.25 vl=+0.00 yaw=0
+[stage23] CR t=  6.1 m1 trav=0.73 F=1.98 L=-- R=-- vf=0.25 vl=+0.00 yaw=6
+[stage23] CR t=  8.1 m1 trav=1.15 F=2.11 L=-- R=-- vf=0.25 vl=+0.00 yaw=7
+[stage23] CR t= 10.2 m1 trav=1.51 F=1.76 L=0.23 R=0.41 vf=0.16 vl=+0.07 yaw=6
+[stage23] CR move 1 done: trav=1.71 F=1.58 L=-- R=0.41 t=11.7
+[stage23] CR move 2: turn=+90 wall 0.46 | E over M1 tip, stop 0.46 before M2 (x=-1.32)
+[stage23] CR yaw jump -76 deg -> absorbed (total -76)
+[stage23] CR yaw jump -22 deg -> absorbed (total -99)
+[stage23] CR yaw jump -50 deg -> absorbed (total -149)
+[stage23] CR yaw jump -76 deg -> absorbed (total -225)
+[stage23] CR yaw jump -21 deg -> absorbed (total -245)
+[stage23] CR yaw jump +80 deg -> absorbed (total -165)
+[stage23] CR yaw jump -60 deg -> absorbed (total -225)
+[stage23] CR yaw jump -37 deg -> absorbed (total -262)
+[stage23] CR yaw jump +47 deg -> absorbed (total -214)
+[stage23] CR error: position lost > 5s
+[stage23] CR landing (error: position lost > 5s)
+[stage23] CR RESULT: error: position lost > 5s | landed=True | elapsed 57 s
+

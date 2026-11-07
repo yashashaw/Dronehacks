@@ -1,0 +1,81 @@
+﻿[WARN] [1794077613.628899847] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794077613.628911227] [rcl]: 'localhost_only' is disabled, 'automatic_discovery_range' and 'static_peers' will be used.
+[stage23] WP start NED=(-0.00, 0.00, 0.04) heading=0.00; 12 waypoints (no time limit)
+[stage23] WP scan matcher ON
+[stage23] WP leg 1 -> course (-2.51, 2.58), 1.67 m, heading 0 deg, anchor=none
+[stage23] WP t= 0.3 leg 1 c=(-2.57,0.82) yaw=   0 s=-0.09/1.67 F=2.90 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 2.4 leg 1 c=(-2.57,0.92) yaw=  -0 s=0.01/1.67 F=2.90 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 4.4 leg 1 c=(-2.58,1.09) yaw=   0 s=0.18/1.67 F=2.84 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 6.4 leg 1 c=(-2.55,1.27) yaw=   0 s=0.36/1.67 F=2.45 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t= 8.5 leg 1 c=(-2.51,1.47) yaw=   0 s=0.56/1.67 F=2.28 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=10.5 leg 1 c=(-2.52,1.72) yaw=   0 s=0.81/1.67 F=2.28 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=12.5 leg 1 c=(-2.52,1.95) yaw=   0 s=1.04/1.67 F=1.99 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=14.5 leg 1 c=(-2.51,2.23) yaw=   0 s=1.32/1.67 F=1.77 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=16.6 leg 1 c=(-2.51,2.45) yaw=   0 s=1.54/1.67 F=1.59 L=-- R=0.42 dcorr=+0.00 lcorr=+0.00
+[stage23] WP leg 1 reached: course=(-2.51, 2.51) F=1.52 dcorr=+0.00 lcorr=+0.00 t=17.3
+[stage23] WP leg 2 -> course (-1.32, 2.58), 1.19 m, heading 90 deg, anchor=0.46m
+[stage23] WP match post-turn 2 pts=22 stiff=1 d=(+0.11,+0.00) dh=+2.6 cost=0.0001 -> theta=+0.0 off=(-0.00,-0.04)
+[stage23] WP t=27.3 leg 2 c=(-2.45,2.67) yaw=  87 s=0.02/1.15 F=1.52 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=29.3 leg 2 c=(-2.37,2.61) yaw=  88 s=0.10/1.15 F=1.52 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=31.3 leg 2 c=(-2.16,2.59) yaw=  89 s=0.31/1.15 F=1.33 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=33.4 leg 2 c=(-1.91,2.62) yaw=  90 s=0.56/1.15 F=1.10 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=35.4 leg 2 c=(-1.67,2.61) yaw=  90 s=0.80/1.15 F=0.86 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=37.5 leg 2 c=(-1.41,2.60) yaw=  90 s=1.06/1.15 F=0.58 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP leg 2 reached: course=(-1.32, 2.60) F=0.50 dcorr=+0.00 lcorr=+0.00 t=38.4
+[stage23] WP leg 3 -> course (-1.38, 0.97), 1.61 m, heading -178 deg, anchor=0.46m
+[stage23] WP t=48.9 leg 3 c=(-1.41,2.56) yaw= 180 s=-0.01/1.58 F=1.99 L=-- R=0.40 dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=50.9 leg 3 c=(-1.45,2.51) yaw=-180 s=0.04/1.58 F=1.99 L=-- R=0.38 dcorr=+0.00 lcorr=+0.00
+[stage23] WP match leg 3 pts=35 stiff=2 d=(-0.05,-0.11) dh=+0.0 cost=0.0001 -> theta=+0.0 off=(+0.09,+0.00)
+[stage23] WP t=52.9 leg 3 c=(-1.44,2.29) yaw=-179 s=0.26/1.58 F=1.87 L=-- R=0.45 dcorr=+0.00 lcorr=+0.04
+[stage23] WP t=54.9 leg 3 c=(-1.40,2.04) yaw=-178 s=0.50/1.58 F=1.59 L=-- R=0.46 dcorr=+0.00 lcorr=+0.02
+[stage23] WP match leg 3 pts=35 stiff=2 d=(-0.02,+0.05) dh=-1.4 cost=0.0002 -> theta=+0.0 off=(+0.07,+0.07)
+[stage23] WP t=57.0 leg 3 c=(-1.40,1.82) yaw=-178 s=0.73/1.58 F=1.38 L=-- R=0.48 dcorr=+0.00 lcorr=+0.01
+[stage23] WP match leg 3 pts=35 stiff=2 d=(+0.06,+0.04) dh=+2.7 cost=0.0002 -> theta=+0.0 off=(+0.03,+0.08)
+[stage23] WP t=59.0 leg 3 c=(-1.36,1.64) yaw=-178 s=0.90/1.58 F=1.14 L=-- R=0.49 dcorr=+0.00 lcorr=+0.01
+[stage23] WP t=61.0 leg 3 c=(-1.37,1.40) yaw=-178 s=1.15/1.58 F=0.91 L=-- R=0.47 dcorr=+0.00 lcorr=+0.01
+[stage23] WP t=63.0 leg 3 c=(-1.42,1.17) yaw=-178 s=1.38/1.58 F=0.69 L=-- R=-- dcorr=+0.00 lcorr=+0.01
+[stage23] WP match leg 3 pts=35 stiff=1 d=(-0.00,-0.07) dh=-0.1 cost=0.0002 -> theta=+0.0 off=(+0.07,+0.10)
+[stage23] WP leg 3 reached: course=(-1.43, 0.93) F=0.50 dcorr=+0.00 lcorr=+0.01 t=64.8
+[stage23] WP leg 4 -> course (-0.34, 0.97), 1.05 m, heading 90 deg, anchor=0.58m
+[stage23] WP t=74.9 leg 4 c=(-1.36,1.04) yaw=  92 s=-0.03/0.99 F=1.52 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP match leg 4 pts=35 stiff=2 d=(+0.15,+0.11) dh=-0.1 cost=0.0003 -> theta=+0.0 off=(-0.05,-0.08)
+[stage23] WP t=76.9 leg 4 c=(-1.10,0.88) yaw=  93 s=0.25/0.99 F=1.38 L=-- R=0.43 dcorr=+0.00 lcorr=+0.06
+[stage23] WP match leg 4 pts=35 stiff=2 d=(-0.06,+0.10) dh=+1.0 cost=0.0002 -> theta=+0.0 off=(-0.15,-0.08)
+[stage23] WP t=78.9 leg 4 c=(-0.82,0.96) yaw=  92 s=0.52/0.99 F=1.10 L=-- R=0.47 dcorr=+0.00 lcorr=+0.04
+[stage23] WP t=81.0 leg 4 c=(-0.54,1.02) yaw=  91 s=0.79/0.99 F=0.82 L=-- R=-- dcorr=+0.00 lcorr=+0.04
+[stage23] WP match leg 4 pts=35 stiff=2 d=(+0.08,+0.04) dh=-1.9 cost=0.0002 -> theta=+0.0 off=(-0.21,-0.10)
+[stage23] WP t=83.0 leg 4 c=(-0.31,0.94) yaw=  91 s=1.02/0.99 F=0.61 L=-- R=-- dcorr=+0.00 lcorr=+0.04
+[stage23] WP leg 4 reached: course=(-0.31, 0.94) F=0.60 dcorr=+0.00 lcorr=+0.04 t=83.0
+[stage23] WP leg 5 -> course (-0.22, 2.58), 1.65 m, heading 4 deg, anchor=none
+[stage23] WP t=92.7 leg 5 c=(-0.30,0.97) yaw=   7 s=0.04/1.65 F=3.54 L=0.33 R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=94.7 leg 5 c=(-0.37,1.02) yaw=   6 s=0.08/1.65 F=3.98 L=0.23 R=-- dcorr=+0.00 lcorr=+0.06
+[stage23] WP t=96.7 leg 5 c=(-0.26,1.24) yaw=   6 s=0.31/1.65 F=3.54 L=0.30 R=-- dcorr=+0.00 lcorr=+0.24
+[stage23] WP t=98.8 leg 5 c=(0.02,1.48) yaw=   5 s=0.57/1.65 F=3.54 L=-- R=-- dcorr=+0.00 lcorr=+0.27
+[stage23] WP t=100.8 leg 5 c=(0.10,1.73) yaw=   5 s=0.82/1.65 F=3.19 L=-- R=-- dcorr=+0.00 lcorr=+0.27
+[stage23] WP t=102.8 leg 5 c=(-0.01,1.97) yaw=   4 s=1.06/1.65 F=2.90 L=0.44 R=-- dcorr=+0.00 lcorr=+0.28
+[stage23] WP t=104.9 leg 5 c=(-0.02,2.24) yaw=   4 s=1.32/1.65 F=2.28 L=-- R=-- dcorr=+0.00 lcorr=+0.30
+[stage23] WP t=106.9 leg 5 c=(0.12,2.51) yaw=   4 s=1.60/1.65 F=2.28 L=-- R=-- dcorr=+0.00 lcorr=+0.30
+[stage23] WP leg 5 reached: course=(0.14, 2.54) F=2.28 dcorr=+0.00 lcorr=+0.30 t=107.3
+[stage23] WP leg 6 -> course (0.95, 2.58), 0.87 m, heading 89 deg, anchor=none
+[stage23] WP jump 0.04 m (TURN/RECOV: n -0.01 e +0.03) -> absorbed, total off=(-0.22, -0.07)
+[stage23] WP jump 0.04 m (TURN/RECOV: n -0.01 e +0.03) -> absorbed, total off=(-0.24, -0.03)
+[stage23] WP t=116.8 leg 6 c=(0.18,2.61) yaw=  86 s=0.11/0.87 F=3.54 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP t=118.9 leg 6 c=(-0.08,2.65) yaw=  87 s=-0.16/0.87 F=3.98 L=-- R=-- dcorr=+0.00 lcorr=+0.00
+[stage23] WP leg 6: STUCK at -0.13/0.87 m (L=-- R=--) -> sidestep right, lcorr=+0.12
+[stage23] WP t=120.9 leg 6 c=(0.17,2.41) yaw=  88 s=0.08/0.87 F=3.98 L=-- R=-- dcorr=+0.00 lcorr=+0.12
+[stage23] WP t=122.9 leg 6 c=(0.34,2.21) yaw= 129 s=0.26/0.87 F=2.66 L=-- R=-- dcorr=+0.00 lcorr=+0.12
+[stage23] WP t=125.0 leg 6 c=(0.41,1.73) yaw=-174 s=0.31/0.87 F=1.33 L=-- R=0.34 dcorr=+0.00 lcorr=+0.12
+[stage23] WP POSITION LOST (estimator invalid): holding setpoint, waiting for recovery
+[stage23] WP jump 0.23 m (TURN/RECOV: n +0.21 e +0.09) -> absorbed, total off=(-0.03, +0.06)
+[stage23] WP position recovered after 0.3 s
+[stage23] WP leg 6: STUCK at 0.01/0.87 m (L=-- R=--) -> sidestep right, lcorr=+0.24
+[stage23] WP yaw jump -168 deg -> absorbed (total -168 deg)
+[stage23] WP leg line rotated -168 deg with the estimate frame
+[stage23] WP yaw jump -29 deg -> absorbed (total -197 deg)
+[stage23] WP leg line rotated -29 deg with the estimate frame
+[stage23] WP t=127.0 leg 6 c=(0.14,1.10) yaw= -12 s=5.54/0.87 F=3.19 L=-- R=-- dcorr=+0.00 lcorr=+0.24
+[stage23] WP POSITION LOST (estimator invalid): holding setpoint, waiting for recovery
+[stage23] WP error: position lost > 30s
+[stage23] WP landing (error: position lost > 30s)
+[stage23] WP RESULT: error: position lost > 30s | landed=True | final course=n/a | total off=(+1.21, +5.21)
+

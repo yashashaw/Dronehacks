@@ -41,7 +41,10 @@ class Stage(Node):
         self.cmd = self.create_publisher(VehicleCommand, '/fmu/in/vehicle_command', pub)
         self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position_v1', self.on_pos, sub)
         self.create_subscription(VehicleStatus, '/fmu/out/vehicle_status_v1', self.on_status, sub)
-        self.create_subscription(Image, '/camera/depth/image_raw', self.on_depth, qos_profile_sensor_data)
+        depth_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                               durability=QoSDurabilityPolicy.VOLATILE,
+                               history=QoSHistoryPolicy.KEEP_LAST, depth=1)   # newest frame only (low latency)
+        self.create_subscription(Image, '/camera/depth/image_raw', self.on_depth, depth_qos)
         self.pos = None
         self.status = None
         self.depth = (None, 0.0)

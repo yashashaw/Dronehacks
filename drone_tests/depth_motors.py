@@ -86,6 +86,7 @@ class DepthMotors(Node):
         self.depth_t = None
         self.status = None
         self.acks = []
+        self.engaged = False      # True once we publish to /fmu/in (only after every safety check)
         self.create_subscription(Image, DEPTH_TOPIC, self.on_depth, SENSOR_QOS)
         self.create_subscription(VehicleStatus, '/fmu/out/vehicle_status_v1',
                                  lambda m: setattr(self, 'status', m), PX4_QOS)
@@ -169,10 +170,11 @@ def bar(thr, max_thr, width=30):
     return '[' + '#' * n + ' ' * (width - n) + ']'
 
 
-def wait_for(node, cond, seconds):
+def wait_for(node, cond, seconds, publish=False):
+    """Spin until cond() or timeout. publish=True also streams the Offboard heartbeat + stopped motors."""
     t0 = time.monotonic()
     while time.monotonic() - t0 < seconds:
-        if node.a.spin:
+        if publish:
             node.heartbeat()
             node.motors(None)
         rclpy.spin_once(node, timeout_sec=0.05)
@@ -211,9 +213,11 @@ def main():
             print(f'[motors] ERROR: no {DEPTH_TOPIC} in 5 s. Is the camera in depth mode? (dt.sh camera status)')
             return 1
         if a.spin:
+            # Nothing goes to /fmu/in until every check below has passed.
             if not wait_for(n, lambda: n.status is not None, 3.0):
                 print('[motors] ERROR: no PX4 vehicle_status -- is the Pixhawk linked?')
                 return 1
+            wait_for(n, lambda: False, 2.0)                      # let DDS discovery see every node
             others = [nm for nm, _ in n.get_node_names_and_namespaces() if 'flight_interface' in nm]
             if others:
                 print(f'[motors] REFUSING: {others} is running. It streams its own Offboard heartbeat.\n'
@@ -223,14 +227,15 @@ def main():
                 print('[motors] REFUSING: the drone is already armed. Disarm on the RC first.')
                 return 1
             print('[motors] streaming Offboard heartbeat, switching to Offboard, arming ...')
-            wait_for(n, lambda: False, 1.0)                      # >= 1 s of heartbeat before the switch
+            n.engaged = True                                     # from here on, cleanup must disarm
+            wait_for(n, lambda: False, 1.0, publish=True)        # >= 1 s of heartbeat before the switch
             n.command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1.0, 6.0)   # custom mode, PX4 OFFBOARD
-            if not wait_for(n, n.offboard, 3.0):
+            if not wait_for(n, n.offboard, 3.0, publish=True):
                 print(f'[motors] ERROR: PX4 did not enter Offboard (ack '
                       f'{n.ack_for(VehicleCommand.VEHICLE_CMD_DO_SET_MODE)}).')
                 return 1
             n.command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0)
-            if not wait_for(n, n.armed, 3.0):
+            if not wait_for(n, n.armed, 3.0, publish=True):
                 print(f'[motors] ERROR: PX4 refused to arm (ack '
                       f'{n.ack_for(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM)}). Pixhawk USB '
                       'plugged in? RC transmitter off? Check QGC / the PX4 console for the reason.')
@@ -266,7 +271,7 @@ def main():
     except KeyboardInterrupt:
         print('\n[motors] Ctrl-C')
     finally:
-        if a.spin:
+        if n.engaged:
             n.disarm()
             print('[motors] motors stopped, disarm sent. armed now:', n.armed())
         n.destroy_node()

@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from team_planner.depth_scan import ScanParams, default_intrinsics, depth_to_scan
-from team_planner.planner_logic import PlannerConfig, PlannerLogic
+from team_planner.planner_logic import PlannerConfig, PlannerLogic, course_to_odom
 
 W, H = 320, 200
 FX, FY, CX, CY = default_intrinsics(W, H)
@@ -147,3 +147,81 @@ def test_pad_hint_only_counts_during_a_run():
     logic.on_state(STATE_UP, 0.0)
     logic.on_pad({"detected": True, "position_enu": [2.0, 1.0, 0.0]})
     assert logic.nav.pad == (2.0, 1.0)
+
+
+# ---- hints: hybrid and scripted modes ------------------------------------------------------
+HINTS = {"start": {"x": 0.0, "y": 0.0, "heading_deg": 0.0},
+         "waypoints": [{"x": 2.0, "y": 0.0}, {"x": 2.0, "y": 2.0}], "pad": {"x": 2.0, "y": 3.0}}
+
+
+def test_course_to_odom_puts_ahead_on_x_and_left_on_y():
+    start = {"x": -2.5, "y": 0.9, "heading_deg": 90.0}          # facing +y of the course
+    ahead = course_to_odom((-2.5, 1.9), start)
+    left = course_to_odom((-3.5, 0.9), start)                   # 1 m toward -x is to the left of a north-facing drone
+    assert abs(ahead[0] - 1.0) < 1e-9 and abs(ahead[1]) < 1e-9
+    assert abs(left[0]) < 1e-9 and abs(left[1] - 1.0) < 1e-9
+
+
+def test_shipped_hints_file_loads_and_starts_forward():
+    import json
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "course_hints.json")
+    hints = json.load(open(path, encoding="utf-8"))
+    first = course_to_odom((hints["waypoints"][0]["x"], hints["waypoints"][0]["y"]), hints["start"])
+    assert first[0] > 0.3 and abs(first[1]) < 0.5               # the first waypoint is up the launch corridor
+
+
+def scripted():
+    logic = PlannerLogic(PlannerConfig(mode="scripted", publish_pad_hint=True), hints=HINTS)
+    logic.on_state(STATE_UP, 0.0)
+    return logic
+
+
+def test_scripted_mode_follows_waypoints_without_depth_then_the_pad():
+    logic = scripted()
+    logic.on_odometry(0.0, 0.0, 0.0, 0.0, 0.0)
+    x, y, z, yaw = logic.goal(0.0)
+    assert x > 0 and abs(y) < 1e-9 and abs(yaw) < 1e-9 and z == logic.cfg.flight_altitude_m
+    logic.on_odometry(1.0, 1.8, 0.1, 0.0, 0.0)                  # reached waypoint 1 (within 0.5 m)
+    x, y, _, _ = logic.goal(1.0)
+    assert y > 0.1                                              # now heading for waypoint 2
+    logic.on_odometry(2.0, 2.0, 1.8, 0.0, 1.57)                 # reached waypoint 2
+    assert logic.nav.route_i == 2 and logic.nav.pad == (2.0, 3.0)
+    assert logic.goal(2.0) is not None
+
+
+def test_pad_hint_is_announced_only_after_the_route_and_near_the_pad():
+    logic = scripted()
+    logic.on_odometry(0.0, 0.0, 0.0, 0.0, 0.0)
+    assert logic.pad_hint_detection(0.0) is None                # route not flown
+    logic.on_odometry(0.5, 1.8, 0.0, 0.0, 0.0)                  # waypoint 1
+    logic.on_odometry(1.0, 2.0, 1.8, 0.0, 0.0)                  # waypoint 2
+    assert logic.pad_hint_detection(2.0) is None                # route done but 1.2 m from the pad
+    logic.on_odometry(3.0, 2.0, 2.6, 0.0, 0.0)
+    det = logic.pad_hint_detection(3.0)
+    assert det and det["confirmed"] and det["source"] == "hint" and det["position_enu"][:2] == [2.0, 3.0]
+
+
+def test_hint_detections_are_not_fed_back_into_the_planner():
+    logic = scripted()
+    logic.nav.pad = None
+    logic.on_pad({"detected": True, "position_enu": [9.0, 9.0, 0.0], "source": "hint"})
+    assert logic.nav.pad is None
+
+
+def test_hybrid_mode_still_uses_the_depth_map_and_heads_down_the_corridor():
+    hints = dict(HINTS, waypoints=[{"x": 8.0, "y": 0.0}], pad={"x": 9.0, "y": 0.0})
+    logic = PlannerLogic(PlannerConfig(mode="hybrid", depth_decimation=1), hints=hints)
+    logic.on_state(STATE_UP, 0.0)
+    depth = corridor_depth()
+    for i in range(25):
+        t = i / 28.0
+        logic.on_odometry(t, 0.0, 0.0, 0.0, 0.0)
+        logic.on_depth(t, t, depth)
+    goal = logic.goal(25 / 28.0)
+    assert goal is not None and goal[0] > 0.1 and abs(goal[1]) < 0.4
+
+
+def test_modes_that_need_hints_fall_back_to_general_without_them():
+    assert PlannerLogic(PlannerConfig(mode="hybrid")).mode == "general"
+    assert PlannerLogic(PlannerConfig(mode="scripted", hints_file="")).mode == "general"

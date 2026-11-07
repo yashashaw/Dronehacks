@@ -36,6 +36,7 @@ class NavParams:
     w_turn: float = 1.5            # cost per radian of turning toward the goal (momentum)
     min_goal_dist: float = 0.85    # frontiers closer than this are blind-spot pockets, not openings
     stickiness: float = 0.8        # cost credit for keeping the current frontier
+    w_hint: float = 3.0            # cost per metre between a frontier and the course hint (hybrid mode only)
     max_candidates: int = 6
     pad_stop: float = 0.25
     rep_gain: float = 0.0          # m/s push away from returns closer than rep_dist; OFF: with the 0.5 m depth minimum it never fires at 0.5 m, and at 0.95 m it fights the path in 1 m corridors
@@ -79,6 +80,12 @@ class Navigator:
         self.recover_dir = (0.0, 0.0)
         self.stuck_events = 0
         self._radius_override = None
+        self.hint = None                 # optional course-specific waypoint (x, y) that biases goals
+        self.route = []                  # optional course-specific waypoint list (see set_route)
+        self.route_i = 0
+        self.route_radius = 0.5
+        self.route_pad = None
+        self._route_pad_set = False
         self.plan_calls = 0
         self.plan_time = 0.0
 
@@ -99,6 +106,38 @@ class Navigator:
             k = 1 / min(self.pad_hits + 1, 10)
             self.pad = (self.pad[0] + k * (px - self.pad[0]), self.pad[1] + k * (py - self.pad[1]))
         self.pad_hits += 1
+
+    def set_hint(self, x, y):
+        """COURSE-SPECIFIC: bias goal choice toward a known point. The live map and the route finder
+        still decide the actual path, so obstacles are still avoided. None clears it."""
+        self.hint = None if x is None else (float(x), float(y))
+
+    def set_route(self, waypoints, pad=None, radius=0.5):
+        """COURSE-SPECIFIC. Hand over a list of (x, y) waypoints in the estimate frame. Each one in
+        turn becomes the hint; the live map and route finder still choose the path between them.
+        After the last one the (optional) pad position is used as the pad estimate."""
+        self.route = [(float(x), float(y)) for x, y in waypoints]
+        self.route_i, self.route_radius = 0, float(radius)
+        self.route_pad, self._route_pad_set = pad, False
+        self.hint = self.route[0] if self.route else None
+
+    def _advance_route(self, x, y):
+        r = self.route_radius
+        while self.route_i < len(self.route):
+            d = math.dist((x, y), self.route[self.route_i])
+            nxt = math.dist((x, y), self.route[self.route_i + 1]) if self.route_i + 1 < len(self.route) else None
+            # reached it, or drifted past it (closer to the next one while still near this one)
+            if d < r or (nxt is not None and nxt < d and d < 2 * r):
+                self.route_i += 1
+            else:
+                break
+        if self.route_i < len(self.route):
+            self.hint = self.route[self.route_i]
+        else:
+            self.hint = None
+            if self.route_pad is not None and not self._route_pad_set:
+                self._route_pad_set = True
+                self.set_pad_world(*self.route_pad)
 
     def set_pad_world(self, x, y):
         """Pad position handed over already in the estimate frame (a detector that unprojects)."""
@@ -222,6 +261,13 @@ class Navigator:
                     self.path, self.goal, self.status = res[0], goal, "to_pad"
                     self.target = res[0][-1]
                     return True
+        if self.hint is not None:   # head straight for the hint if the known map already connects to it
+            hg = self._nearest_ok(self.hint, 0.5)
+            res = self._route(start, hg) if hg is not None else None
+            if res:
+                self.path, self.goal, self.status = res[0], hg, "to_hint"
+                self.target = res[0][-1]
+                return True
         best = None
         cands = sorted(self.frontiers(start), key=lambda f: math.dist(self.grid.to_world(*f[0]), (x, y)))
         cands = [f for f in cands if not self._is_banned(self.grid.to_world(*f[0]))]
@@ -236,6 +282,8 @@ class Navigator:
             ahead = path[1] if len(path) > 1 else pt
             turn = abs((math.atan2(ahead[1] - y, ahead[0] - x) - yaw + math.pi) % (2 * math.pi) - math.pi)
             score = cost + p.w_visit * self._trail_fraction(cell) + p.w_turn * turn
+            if self.hint is not None:
+                score += p.w_hint * math.dist(pt, self.hint)
             if self.goal is not None and math.dist(pt, self.goal) < 0.5:
                 score -= p.stickiness
             if best is None or score < best[0]:
@@ -383,6 +431,8 @@ class Navigator:
         self.t = t if t is not None else self.frame / self.p.rate_hz
         self.mapper.update(pose, returns)
         self._mark_visited(x, y)
+        if self.route:
+            self._advance_route(x, y)
         if pad_obs:
             self._see_pad(pose, pad_obs)
         if self.extra_margin > 0 and self.t - self.margin_t > self.p.margin_decay_s:

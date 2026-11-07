@@ -29,13 +29,17 @@ def _rotor_positions(drone, veh):
 
 
 def fly(world, seed, nav_params=None, sensor=None, est=None, veh=None, latency=None, altitude=0.76,
-        strategy="map", verbose=False):
+        strategy="map", route=None, verbose=False):
     rng = random.Random(seed)
     sensor, est, veh = sensor or SensorParams(), est or EstimatorParams(), veh or VehicleParams()
     latency = latency or LatencyParams()
     estimator = Estimator(world.launch, est, rng)
     drone = Vehicle(world.launch, math.pi / 2, veh, rng, altitude)
     nav = ReactiveNavigator() if strategy == "reactive" else Navigator(0.05, nav_params)  # the map starts small and grows
+    if route is not None:   # hybrid mode: course-specific waypoints, converted to the launch-centred estimate frame
+        wps, pad_hint = route
+        lx, ly = world.launch
+        nav.set_route([(x - lx, y - ly) for x, y in wps], pad=None if pad_hint is None else (pad_hint[0] - lx, pad_hint[1] - ly))
     flat = world.union_grid(altitude - sensor.belly - sensor.margin_v, altitude + sensor.top + sensor.margin_v)
     trail, hits, touches, touching, t, result = [], [], 0, False, 0.0, "timeout"
     inbox, last_idx, cmd = [], -1, ((0.0, 0.0), drone.yaw)

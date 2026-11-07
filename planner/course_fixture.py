@@ -276,3 +276,22 @@ def make_layouts(obj_path, radius=0.26, altitude=0.76):
         else:
             print("no feasible version of layout:", name)
     return out
+
+
+def plan_course_route(obj_path, radius=0.26, altitude=0.76, avoid_window=True, spacing=1.5):
+    """COURSE-SPECIFIC: waypoints (course frame) from the launch mark to the pad, planned on the
+    perfect map. Used only to make hint files and to test the hybrid mode in the simulator.
+    Returns (launch, pad, waypoints) or None."""
+    from theta_star import theta_star
+    blocks = [(-0.85, -2.80, -0.05, -1.75)] if avoid_window else []    # close the window so it takes Gate B
+    world = build_world(obj_path, extra_blocks=blocks)
+    flat = world.union_grid(altitude - 0.095 - 0.15, altitude + 0.03 + 0.15)
+    res = theta_star(flat, world.launch, world.pad, radius, mode="astar_smooth")
+    if res is None:
+        return None
+    pts = [res[0][0]]
+    for p in res[0][1:]:
+        a = pts[-1]
+        n = max(1, int(math.ceil(math.dist(a, p) / spacing)))
+        pts.extend((a[0] + (p[0] - a[0]) * k / n, a[1] + (p[1] - a[1]) * k / n) for k in range(1, n + 1))
+    return world.launch, world.pad, [(round(x, 2), round(y, 2)) for x, y in pts[1:]]

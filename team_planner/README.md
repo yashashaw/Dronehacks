@@ -1,8 +1,10 @@
 # team_planner: depth planner for the skybeta drone (integration branch)
 
 **Status: written against the repo docs and tested without a drone. Nothing here has flown.**
-The logic and the depth conversion run under pytest (12 tests). The ROS node, launch file and
+The logic and the depth conversion run under pytest (19 tests). The ROS node, launch file and
 Docker snippet have only been syntax-checked.
+
+**See `../INTEGRATION_STATUS.md` for the algorithm, the three planner modes (`general`, `hybrid`, `scripted`), the problem list and the plan for the first run.**
 
 This branch combines three people's work without changing the shape of any of it:
 

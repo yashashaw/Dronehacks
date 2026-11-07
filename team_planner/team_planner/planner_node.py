@@ -7,6 +7,7 @@
     subscribe  /pad/detection                   pad_detector JSON (position only, as a hint)
     subscribe  /loc/health                      optional, Lucas's localization health (DiagnosticStatus)
     publish    /course/goal                     PoseStamped for pad_guide: point + heading, ENU odom
+    publish    /pad/detection                   ONLY if publish_pad_hint: hinted pad (source=hint), near the pad
     publish    /team_planner/debug              JSON at 2 Hz for the bag
 
 It never publishes a setpoint, never talks to /fmu/*, never arms, never changes mode, and writes
@@ -58,6 +59,10 @@ class PlannerNode(Node):
                                    "too slow on the Jetson. Add numba to the team image.")
 
         self.goal_pub = self.create_publisher(PoseStamped, "/course/goal", 10)
+        self.pad_pub = self.create_publisher(String, "/pad/detection", 10) if config.publish_pad_hint else None
+        if self.logic.mode != config.mode:
+            self.get_logger().error(f"mode {config.mode} needs hints_file; running in general mode instead")
+        self.get_logger().info(f"mode: {self.logic.mode}" + (" (COURSE-SPECIFIC hints in use)" if self.logic.mode != "general" else ""))
         self.debug_pub = self.create_publisher(String, "/team_planner/debug", 10)
         self.create_subscription(Odometry, self.get_parameter("odometry_topic").value, self.odometry_cb, 10)
         self.create_subscription(Image, self.get_parameter("depth_topic").value, self.depth_cb, qos_profile_sensor_data)
@@ -115,6 +120,10 @@ class PlannerNode(Node):
 
     # ---- outputs ------------------------------------------------------------------------------
     def publish_goal(self):
+        if self.pad_pub is not None:
+            hint = self.logic.pad_hint_detection(self.now_s())
+            if hint is not None:
+                self.pad_pub.publish(String(data=json.dumps(hint)))
         goal = self.logic.goal(self.now_s())
         if goal is None:
             return

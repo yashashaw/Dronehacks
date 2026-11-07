@@ -1,0 +1,49 @@
+## TF base_link -> oak_parent_frame (declared mount)
+[INFO] [1794025713.777018352] [tf2_echo]: Waiting for transform base_link ->  oak_parent_frame: Invalid frame ID "base_link" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1794025715.749903760] [tf2_echo]: Waiting for transform base_link ->  oak_parent_frame: Invalid frame ID "base_link" passed to canTransform argument target_frame - frame does not exist
+At time 0.0
+- Translation: [0.105, 0.000, 0.030]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000  0.000  0.000  0.105
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.030
+  0.000  0.000  0.000  1.000
+## base_link -> oak_left_camera_optical_frame
+[INFO] [1794025718.568422000] [tf2_echo]: Waiting for transform base_link ->  oak_left_camera_optical_frame: Invalid frame ID "base_link" passed to canTransform argument target_frame - frame does not exist
+At time 0.0
+- Translation: [0.105, 0.037, 0.031]
+- Rotation: in Quaternion (xyzw) [-0.488, 0.510, -0.497, 0.504]
+- Rotation: in RPY (radian) [-1.568, 0.029, -1.586]
+- Rotation: in RPY (degree) [-89.866, 1.634, -90.893]
+- Matrix:
+ -0.016  0.003  1.000  0.105
+ -0.999  0.028 -0.016  0.037
+ -0.029 -1.000  0.002  0.031
+  0.000  0.000  0.000  1.000
+At time 0.0
+## base_link -> oak_imu_frame
+[INFO] [1794025722.319068400] [tf2_echo]: Waiting for transform base_link ->  oak_imu_frame: Invalid frame ID "base_link" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1794025724.271465520] [tf2_echo]: Waiting for transform base_link ->  oak_imu_frame: Invalid frame ID "oak_imu_frame" passed to canTransform argument source_frame - frame does not exist
+At time 0.0
+- Translation: [0.103, -0.038, 0.030]
+- Rotation: in Quaternion (xyzw) [0.500, -0.500, 0.500, -0.500]
+- Rotation: in RPY (radian) [-1.571, -0.000, -1.571]
+- Rotation: in RPY (degree) [-90.000, -0.000, -90.000]
+- Matrix:
+  0.000  0.000  1.000  0.103
+ -1.000  0.000  0.000 -0.038
+  0.000 -1.000  0.000  0.030
+  0.000  0.000  0.000  1.000
+## CAMERA_* in the running stack
+CAMERA_X=0.1053
+CAMERA_ROLL=0
+CAMERA_PITCH=0
+CAMERA_Z=0.0304
+CAMERA_YAW=0
+DRONE_ID=7
+CAMERA_Y=0
+## usb
+Bus 002 Device 003: ID 03e7:f63b Intel Myriad VPU [Movidius Neural Compute Stick]

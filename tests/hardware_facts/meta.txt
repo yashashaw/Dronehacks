@@ -1,0 +1,9 @@
+start 2026-11-06T20:28:32-08:00
+Linux skybeta-07 5.15.185-tegra #1 SMP PREEMPT Thu Jan 15 19:24:38 PST 2026 aarch64 aarch64 aarch64 GNU/Linux
+# R36 (release), REVISION: 5.0, GCID: 43688277, BOARD: generic, EABI: aarch64, DATE: Fri Jan 16 03:50:45 UTC 2026
+# KERNEL_VARIANT: oot
+TARGET_USERSPACE_LIB_DIR=nvidia
+TARGET_USERSPACE_LIB_DIR_PATH=usr/lib/aarch64-linux-gnu/nvidia
+skybeta-stack skybeta:0.3.2 Up 23 minutes
+skybeta-ros-status skybeta:0.3.2 Up 24 minutes
+done 2026-11-06T20:29:39-08:00

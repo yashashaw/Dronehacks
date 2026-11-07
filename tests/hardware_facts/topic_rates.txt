@@ -1,0 +1,20 @@
+## /oak/left/image_raw
+average rate: 27.754
+	min: 0.012s max: 0.086s std dev: 0.01360s window: 143
+average rate: 27.420
+	min: 0.012s max: 0.100s std dev: 0.01492s window: 170
+## /oak/right/image_raw
+	min: 0.013s max: 0.368s std dev: 0.03646s window: 179
+average rate: 25.011
+	min: 0.013s max: 0.368s std dev: 0.03425s window: 206
+failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+## /oak/imu/data
+	min: 0.000s max: 0.020s std dev: 0.00568s window: 1204
+average rate: 199.991
+	min: 0.000s max: 0.020s std dev: 0.00566s window: 1405
+failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+## /visual_slam/tracking/odometry
+average rate: 30.031
+	min: 0.001s max: 0.333s std dev: 0.04540s window: 195
+average rate: 30.026
+	min: 0.001s max: 0.333s std dev: 0.04226s window: 225

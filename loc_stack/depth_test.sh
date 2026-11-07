@@ -7,6 +7,9 @@
 #   ./depth_test.sh on                         save the running slam pipeline, switch it to depth
 #   ./depth_test.sh measure LABEL TRUTH_M [S]  record S s (default 15) of depth at a wall
 #   ./depth_test.sh off                        restore the saved pipeline, check rates by stamp
+#   ./depth_test.sh video [SECONDS] [NAME]     record an mp4 of depth beside the left image (depth on)
+#   ./depth_test.sh loctest [SECONDS] [NAME]   2:00 default: depth video with live VIO map, PLUS the
+#                                              full localization log (walk_logger), started together
 #
 # Only the stack's `slam` tmux pane is swapped; the agent keeps running, so the Pixhawk
 # link survives. If the depth launch ever exits, the pane falls back to the saved pipeline
@@ -86,11 +89,19 @@ on() {
 set -e
 cur=\$(docker exec skybeta-stack tmux display -p -t skybeta:slam '#{pane_start_command}')
 if grep -q 'start_depth.sh' <<<"\$cur"; then echo "depth is already on"; exit 0; fi
-# Save what is running NOW, so 'off' puts back exactly that.
-cmd=\$(sed -e 's/^"//' -e 's/"\$//' <<<"\$cur")
-[ -n "\$cmd" ] || cmd='run_slam.sh'
-printf '#!/bin/bash\n# saved by depth_test.sh on %s\nexec %s\n' "\$(date '+%F %T')" "\$cmd" > $HD/restore_slam.sh
+# Save what is running NOW, so 'off' puts back exactly that. If the pane is running a
+# previous restore (an earlier 'off'), reuse that saved pipeline: saving
+# "bash restore_slam.sh" would make the restore file exec itself forever.
+if grep -q 'restore_slam' <<<"\$cur"; then
+  [ -f $HD/restore_slam.used ] || { echo "pane runs a restore but no restore_slam.used to reuse"; exit 1; }
+  cp $HD/restore_slam.used $HD/restore_slam.sh
+else
+  cmd=\$(sed -e 's/^"//' -e 's/"\$//' <<<"\$cur")
+  [ -n "\$cmd" ] || cmd='run_slam.sh'
+  printf '#!/bin/bash\n# saved by depth_test.sh on %s\nexec %s\n' "\$(date '+%F %T')" "\$cmd" > $HD/restore_slam.sh
+fi
 bash -n $HD/restore_slam.sh
+grep -q 'restore_slam' $HD/restore_slam.sh && { echo "refusing: restore file points at itself"; exit 1; }
 echo "saved pipeline: \$(tail -1 $HD/restore_slam.sh)"
 docker exec skybeta-stack tmux respawn-pane -k -t skybeta:slam "bash $D/start_depth.sh"
 echo 'slam pane now runs the depth pipeline'
@@ -113,7 +124,12 @@ measure() {  # LABEL TRUTH SECONDS
   local label=$1 truth=$2 secs=${3:-15} tflag=""
   [ -n "$truth" ] && [ "$truth" != "-" ] && tflag="--truth $truth"
   local out=/root/team_ws/walk_runs/depth/$label
-  r "rm -rf ~/team_ws/walk_runs/depth/$label; docker exec -d skybeta-stack bash -lc '$ENVSRC; python3 /root/team_ws/loc_stack/depth_wall.py --label $label $tflag --seconds $secs --out $out'" || return 1
+  # The folder is root-owned (made by the container): delete old results from INSIDE it,
+  # and refuse to go on if they survive, or a stale DONE would be read as this run.
+  r "docker exec skybeta-stack rm -rf $out && ! test -e ~/team_ws/walk_runs/depth/$label" \
+    || { echo "could not clear old results for '$label'"; return 1; }
+  rm -rf "$HERE/runs/depth/$label"
+  r "docker exec -d skybeta-stack bash -lc '$ENVSRC; python3 /root/team_ws/loc_stack/depth_wall.py --label $label $tflag --seconds $secs --out $out'" || return 1
   echo "recording '$label' for $secs s: keep the drone still"
   for i in $(seq 1 $((secs + 40))); do
     sleep 1
@@ -137,6 +153,83 @@ if d.get('plane_tilt_deg') and d['plane_tilt_deg'] > 5:
 PY
 }
 
+video() {  # SECONDS NAME
+  local secs=${1:-30} name=${2:-video_$(date +%H%M%S)}
+  local out=/root/team_ws/walk_runs/depth_video/$name
+  retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$HERE/depth_video.py" \
+    "$DRONE:team_ws/loc_stack/depth_video.py" || return 1
+  # walk_runs is root-owned (the container made it): clear and create the folder from inside.
+  r "docker exec skybeta-stack rm -rf $out && ! test -e ~/team_ws/walk_runs/depth_video/$name"     || { echo "could not clear old results for '$name'"; return 1; }
+  rm -rf "$HERE/runs/depth_video/$name"
+  r "docker exec -d skybeta-stack bash -lc 'mkdir -p $out; $ENVSRC; python3 /root/team_ws/loc_stack/depth_video.py --seconds $secs --out $out > $out/run.log 2>&1'" || return 1
+  echo "recording depth video '$name' for $secs s..."
+  for i in $(seq 1 $((secs + 60))); do
+    sleep 1
+    r "test -f ~/team_ws/walk_runs/depth_video/$name/DONE" 2>/dev/null && break
+  done
+  mkdir -p "$HERE/runs/depth_video/$name"
+  r "tail -5 ~/team_ws/walk_runs/depth_video/$name/run.log 2>/dev/null"
+  for f in depth.mp4 depth.avi frames.csv first_frame.png run.log DONE; do
+    retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$DRONE:team_ws/walk_runs/depth_video/$name/$f" "$HERE/runs/depth_video/$name/" 2>/dev/null
+  done
+  ls -la "$HERE/runs/depth_video/$name"
+}
+
+loctest() {  # SECONDS NAME: depth video + localization log, started together
+  local secs=${1:-120} name=${2:-loctest_$(date +%H%M%S)}
+  local out=/root/team_ws/walk_runs/depth_video/$name
+  local here_out="$HERE/runs/depth_video/$name"
+  # Depth must be on (the video needs /oak/stereo/image_raw). Exit 255 = SSH failed:
+  # that says nothing about depth, so stop instead of guessing.
+  r "docker exec skybeta-stack tmux display -p -t skybeta:slam '#{pane_start_command}' | grep -q start_depth.sh"
+  case $? in
+    0) ;;
+    255) echo "drone unreachable over SSH (USB-C plugged in? ping 192.168.55.1)"; return 1 ;;
+    *) echo "depth is off: switching it on first"; on || return 1 ;;
+  esac
+  retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$HERE/depth_video.py" \
+    "$DRONE:team_ws/loc_stack/depth_video.py" || return 1
+  r "test -f ~/team_ws/loc_stack/walk_logger.py" || retry scp -q -o BatchMode=yes \
+    -o ConnectTimeout=8 "$HERE/walk_logger.py" "$DRONE:team_ws/loc_stack/walk_logger.py" || return 1
+  r "docker exec skybeta-stack rm -rf $out && ! test -e ~/team_ws/walk_runs/depth_video/$name"     || { echo "could not clear old results for '$name'"; return 1; }
+  rm -rf "$here_out"
+  # Both start in ONE command, so they cover the same window.
+  r "docker exec skybeta-stack tmux display -p -t skybeta:slam '#{pane_start_command}' > /tmp/slam_cfg_$name.txt; \
+     docker exec -d skybeta-stack bash -lc 'mkdir -p $out/loc; cp /dev/null $out/loc/config.txt; $ENVSRC; \
+       python3 /root/team_ws/loc_stack/walk_logger.py --seconds $secs --out $out/loc > $out/loc/run.log 2>&1 & \
+       python3 /root/team_ws/loc_stack/depth_video.py --seconds $secs --out $out > $out/run.log 2>&1; wait'" || return 1
+  echo "RECORDING '$name' for $secs s: depth video + localization. Started $(date +%H:%M:%S)."
+  echo "Hold still ~3 s at the start and at the end (and at any mark you want measured)."
+  for i in $(seq 1 $((secs + 90))); do
+    sleep 1
+    (( i % 30 == 0 && i <= secs )) && echo "  ${i}s / ${secs}s"
+    r "test -f ~/team_ws/walk_runs/depth_video/$name/DONE && test -f ~/team_ws/walk_runs/depth_video/$name/loc/DONE" 2>/dev/null && break
+  done
+  mkdir -p "$here_out/loc"
+  for f in depth.mp4 depth.avi frames.csv first_frame.png last_frame.png run.log DONE; do
+    retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$DRONE:team_ws/walk_runs/depth_video/$name/$f" "$here_out/" 2>/dev/null
+  done
+  for f in odom.csv status.csv lpos.csv ekf_flags.csv run.log DONE; do
+    retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$DRONE:team_ws/walk_runs/depth_video/$name/loc/$f" "$here_out/loc/" 2>/dev/null
+  done
+  retry scp -q -o BatchMode=yes -o ConnectTimeout=8 "$DRONE:/tmp/slam_cfg_$name.txt" "$here_out/loc/config.txt" 2>/dev/null
+  echo "== video";        cat "$here_out/DONE" 2>/dev/null || echo "video: no DONE (see $here_out/run.log)"
+  echo "== localization"; cat "$here_out/loc/DONE" 2>/dev/null || echo "logger: no DONE"
+  if [ -f "$here_out/loc/odom.csv" ]; then
+    python "$HERE/analyze_walk.py" "$here_out/loc" > /dev/null && \
+      python - "$here_out/loc/analysis.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+for k in ('duration_s', 'odom_rate_hz', 'max_odom_gap_ms', 'tracking_lost_events', 'path_length_m',
+          'height_span_m', 'start_to_end_error_m', 'start_to_end_error_pct_of_path'):
+    print(f'  {k}: {d.get(k)}')
+print(f"  holds found: {len(d.get('dwells', []))}")
+PY
+    python "$HERE/plot_walk.py" "$here_out/loc" > /dev/null 2>&1 && echo "  3D track: $here_out/loc/map.html"
+  fi
+  echo "files: $here_out"
+}
+
 wall() {  # guided session
   local dists=("$@"); [ ${#dists[@]} -gt 0 ] || dists=(0.5 1.0 2.0 3.0)
   trap 'echo; echo "interrupted: restoring the slam pipeline"; off; exit 1' INT
@@ -157,6 +250,8 @@ case "$1" in
   wall)    shift; wall "$@" ;;
   on)      on ;;
   measure) measure "${2:?label}" "${3:?truth in metres, or - for none}" "${4:-15}" ;;
+  video)   video "${2:-30}" "$3" ;;
+  loctest) loctest "${2:-120}" "$3" ;;
   off)     off ;;
-  *) sed -n 2,10p "$0" ;;
+  *) sed -n 2,13p "$0" ;;
 esac

@@ -20,3 +20,5 @@ Dockerfile* text eol=lf
 *.npy  binary
 *.ulg  binary
 *.mcap binary
+*.patch   text eol=lf
+*.diff    text eol=lf

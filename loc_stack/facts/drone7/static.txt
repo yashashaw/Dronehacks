@@ -1,0 +1,11 @@
+## cpus
+6
+## nvpmodel
+NV Power Mode: MAXN_SUPER
+2
+## cpu freq MHz
+1728 1728 1728 1728 1728 1728 
+## usb speed
+/:  Bus 02.Port 1: Dev 1, Class=root_hub, Driver=tegra-xusb/4p, 10000M
+    |__ Port 1: Dev 2, If 0, Class=Hub, Driver=hub/4p, 10000M
+        |__ Port 1: Dev 5, If 0, Class=Vendor Specific Class, Driver=usbfs, 5000M

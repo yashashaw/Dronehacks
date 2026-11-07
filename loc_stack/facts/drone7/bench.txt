@@ -1,0 +1,7 @@
+pure python loop (1.5M iters): 263 ms   python 3.10.12
+1024x640 SGBM  (128 disp, 3way): 94 ms/frame
+1024x640 SGBM  (128 disp, fast): 179 ms/frame
+1024x640 BM    (128 disp):       29 ms/frame
+512x320 SGBM  (64 disp, 3way): 16 ms/frame
+512x320 SGBM  (64 disp, fast): 28 ms/frame
+512x320 BM    (64 disp):       6 ms/frame

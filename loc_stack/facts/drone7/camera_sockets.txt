@@ -1,0 +1,16 @@
+## camera sockets seen by the driver (slam pane log)
+raw", data_format="nitros_image_rgb8"
+e_raw", data_format="nitros_image_rgb8"
+ble IMU Fusion: false
+raw", data_format="nitros_image_rgb8"
+e_raw", data_format="nitros_image_rgb8"
+raw", data_format="nitros_image_rgb8"
+e_raw", data_format="nitros_image_rgb8"
+ble IMU Fusion: true
+## rgb/color topics
+/oak/left/image_raw/compressedDepth
+/oak/right/image_raw/compressedDepth
+(end of list)
+## driver pipeline param
+      i_enable_rgbd: false
+      i_pipeline_type: stereo

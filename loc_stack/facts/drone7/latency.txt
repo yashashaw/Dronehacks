@@ -1,0 +1,21 @@
+[INFO] [1794029995.019070064] [latency_probe]: sampling /oak/left/image_raw and /fmu/in/vehicle_visual_odometry for 30 s ...
+
+========================================================================
+latency probe: 30.0 s
+========================================================================
+driver leg  /oak/left/image_raw
+    image header.stamp -> probe arrival
+    n=761  (25.3 Hz)  p50=36.3 ms  p95=56.7 ms  max=80.3 ms  min=34.9 ms
+full chain  /fmu/in/vehicle_visual_odometry
+    image header.stamp -> bridge publish
+    n=885  (29.5 Hz)  p50=158.0 ms  p95=349.1 ms  max=388.3 ms  min=57.4 ms
+
+Recommended EKF2_EV_DELAY = 158 ms   (p50 of the full chain, rounded)
+    of which 36.3 ms is the driver leg; 121.6 ms is GPU mono8 conversion + cuVSLAM + bridge.
+
+This stops at the bridge's DDS publish. It excludes the
+uXRCE-DDS serial hop to the FC, so the true fusion age is
+slightly larger. Cross-check on the vehicle with the
+authoritative method -- SDLOG_PROFILE bit 7 (EKF2 replay),
+then replay the log and inspect the innovation timing.
+========================================================================

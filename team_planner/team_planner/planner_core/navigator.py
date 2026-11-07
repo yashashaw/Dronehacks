@@ -54,6 +54,7 @@ class NavParams:
     margin_max: float = 0.12
     margin_decay_s: float = 15.0
     ban_s: float = 30.0            # do not retry a goal that got the drone stuck for this long
+    speed_clr_age: int = 3         # frames a distance map may be reused for speed limiting (1 = rebuild every frame)
     planner: str = "theta"         # route finder: theta | astar | astar_smooth | rrt_smooth (benchmarking)
 
 
@@ -81,6 +82,8 @@ class Navigator:
         self.recover_dir = (0.0, 0.0)
         self.stuck_events = 0
         self._radius_override = None
+        self._speed_clr = None           # slightly stale clearance for speed limiting (see _path_limits)
+        self._speed_clr_key = None
         self.hint = None                 # optional course-specific waypoint (x, y) that biases goals
         self.route = []                  # optional course-specific waypoint list (see set_route)
         self.route_i = 0
@@ -340,7 +343,12 @@ class Navigator:
     def _path_limits(self, i, x, y):
         """Speed cap from the clearance left along the next stretch of path, and from its turns."""
         p, g = self.p, self.grid
-        clr = g.clearance()
+        # Speed limiting does not need this frame's distance map: reuse one up to 3 frames old unless
+        # the grid changed size. (Rebuilding it every frame was ~77% of the planner's time.)
+        key = (g.w, g.h, g.ox, g.oy)
+        if self._speed_clr is None or self._speed_clr_key != key or self.frame - self._speed_clr_frame >= p.speed_clr_age:
+            self._speed_clr, self._speed_clr_key, self._speed_clr_frame = g.clearance(), key, self.frame
+        clr = self._speed_clr
         pts = self.path
         slack, turn, run = 9.0, 0.0, 0.0
         prev_h = None

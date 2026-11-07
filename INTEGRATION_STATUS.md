@@ -113,6 +113,25 @@ walls stalling exploration), and a way to exercise landing even if perception fa
 * Where are the checkpoint lines, and does "whole drone" include the props?
 * Do images captured in practice flights count as "run data" under rule 6.4 if used to train a pad detector?
 
+## Compute budget (measure this on the Jetson before trusting it)
+
+Flyx integration felt heavy, so the planner now ships a probe that needs no ROS and no drone:
+`python3 -m team_planner.budget_probe` (run it twice: the first run compiles numba, the second
+loads the cache). It prints versions, import times, compile or cache-load time, per-frame planner
+time on a synthetic corridor stream, and memory. Run it in flyx and on the Jetson and compare.
+
+On the build laptop: about 3 ms per frame, 2.2 s one-time compile (0.23 s with a cache), 144 MB.
+The Jetson was about 4x slower on a plain-Python loop, so expect roughly 12 ms per frame; the
+budget is about 70 ms per used frame while cuVSLAM runs. **That is an estimate, not a measurement.**
+
+* numba is not the heavy part: the route search is about 2% of planner time. The heavy part was the
+  distance map being rebuilt every frame; it is now reused for up to 3 frames for speed limiting
+  (`speed_clr_age`), which halved the planner's time with 200/200 simulated flights still landing.
+* The one-time compile happens when the node starts (at power-up, before arming), not in flight.
+* numba's cache goes to `$TEAM_WS/.numba_cache` (default `/root/team_ws`) so a restart does not recompile.
+* If numba misbehaves on the Jetson, the fallback is a small C++ search library loaded from Python;
+  pure Python is about 80x slower on a maze-sized grid and is not usable.
+
 ## Test status
 
 | Check | Result |

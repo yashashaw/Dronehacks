@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+build/
+install/
+log/
+field_tests/runs/
+flight_logs/

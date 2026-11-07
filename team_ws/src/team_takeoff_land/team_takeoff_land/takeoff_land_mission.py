@@ -14,6 +14,19 @@ from std_srvs.srv import Trigger
 from team_takeoff_land.mission_logic import (LAND, TAKEOFF, Mission,
                                              MissionConfig)
 
+def log_at(logger, level, text):
+    """Log at a level chosen at run time. rclpy (Humble) ties one severity to each call
+    site and raises 'Logger severity cannot be changed between calls' -- which kills the
+    node -- if the same line logs at two levels. One line per severity avoids that."""
+    if level == 'error':
+        logger.error(text)
+    elif level in ('warn', 'warning'):
+        logger.warning(text)
+    elif level == 'debug':
+        logger.debug(text)
+    else:
+        logger.info(text)
+
 
 class TakeoffLandMission(Node):
 
@@ -77,7 +90,7 @@ class TakeoffLandMission(Node):
                 future.add_done_callback(
                     lambda f, w=which: self.on_done(w, f))
         for level, text in self.mission.messages:
-            getattr(self.get_logger(), level)(text)
+            log_at(self.get_logger(), level, text)
         self.mission.messages.clear()
 
     def on_done(self, which, future):

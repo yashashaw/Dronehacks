@@ -47,6 +47,19 @@ from team_takeoff_land.logic import (Config, Inputs, PASSTHROUGH,
 STATUS_TIMEOUT_S = 1.0
 NAN = float('nan')
 
+def log_at(logger, level, text):
+    """Log at a level chosen at run time. rclpy (Humble) ties one severity to each call
+    site and raises 'Logger severity cannot be changed between calls' -- which kills the
+    node -- if the same line logs at two levels. One line per severity avoids that."""
+    if level == 'error':
+        logger.error(text)
+    elif level in ('warn', 'warning'):
+        logger.warning(text)
+    elif level == 'debug':
+        logger.debug(text)
+    else:
+        logger.info(text)
+
 
 class TakeoffLandNode(Node):
 
@@ -274,7 +287,7 @@ class TakeoffLandNode(Node):
         s = self.inputs()
         out = self.logic.step(s)
         for level, text in out.logs:
-            getattr(self.get_logger(), level)(text)
+            log_at(self.get_logger(), level, text)
         if out.setpoint is not None:
             self.publish_pose(out.setpoint)
         elif out.forward_planner and not s.offboard and s.position is not None:

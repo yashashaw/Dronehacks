@@ -389,9 +389,12 @@ def main():
         # 2 s after, motors off: does the estimate settle back?
         try:
             t1 = time.monotonic()
+            next_row = t1
             while time.monotonic() - t1 < 2.0:
-                rclpy.spin_once(n, timeout_sec=0.1)
-                log.writerow(n.log_row(time.monotonic() - t0, n.dist, None))
+                rclpy.spin_once(n, timeout_sec=0.02)
+                if time.monotonic() >= next_row:
+                    log.writerow(n.log_row(time.monotonic() - t0, n.dist, None))
+                    next_row += 0.1
         except Exception:
             pass
         log_f.close()

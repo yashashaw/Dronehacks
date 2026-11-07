@@ -1,0 +1,32 @@
+{
+ "label": "F1_takeoff_land",
+ "started": 1794088070.829655,
+ "stopped": 1794088072.9703166,
+ "counts": {
+  "odom": 37,
+  "depth": 35,
+  "rows": 10,
+  "plane_ok": 0,
+  "px4_status": 3,
+  "px4_lpos": 98
+ },
+ "rate": 10.0,
+ "odom_topic": "/visual_slam/tracking/odometry",
+ "camera_mount_xyz": [
+  0.1053,
+  0.0,
+  0.0304
+ ],
+ "depth_K": [
+  391.88372802734375,
+  391.9105529785156,
+  321.9684753417969,
+  203.86477661132812
+ ],
+ "depth_size": [
+  640,
+  400
+ ],
+ "px4_msgs": true,
+ "vslam_status_msgs": true
+}

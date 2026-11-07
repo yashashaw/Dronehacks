@@ -44,8 +44,15 @@ Points `/etc/skybeta/drone.env` at our launcher (`team_flight_test` / `autostart
 
 ## 4. Camera 640x400 + depth (optional, measured better on every number)
 
-Needs the depth profile in `~/skybeta/container_scripts/run_slam.sh` on the drone (drone 7 has it;
-the patch will be added to `drone_setup/` from drone 7). Then:
+Needs the depth profile in the drone's skybeta checkout. `skybeta_depth640.patch` (taken from
+drone 7, against skybeta 0.3.3 @ 3c42933) adds it to `container_scripts/run_slam.sh`,
+`host/run.sh`, `host/drone_env.sh`. From the laptop, then on the drone:
+```
+scp team_ws/drone_setup/skybeta_depth640.patch dronehacks@<drone>:/tmp/
+ssh dronehacks@<drone>
+cd ~/skybeta && git apply --check /tmp/skybeta_depth640.patch && git apply /tmp/skybeta_depth640.patch
+```
+If `--check` fails, the drone's skybeta differs from 0.3.3: do not force it, ask. Then:
 ```
 ~/team_ws/field_tests/ft.sh camera new      # restarts the stack, disarmed, ~2 min
 ~/team_ws/field_tests/ft.sh camera status   # depth ON, 640 wide

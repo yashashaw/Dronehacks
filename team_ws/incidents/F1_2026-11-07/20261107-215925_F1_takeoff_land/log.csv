@@ -1,0 +1,2 @@
+t,vio_x,vio_y,vio_z,vio_yaw_deg,vio_dt_ms,vo_state,armed,nav_state,fc_x,fc_y,fc_z,fc_heading_deg,dist_bottom,valid_frac,roi_n,plane_ok,wall_dist_m,wall_rms_m,wall_inlier_frac,wall_yaw_deg,wall_pitch_deg,nwx,nwy,nwz,dw,center_med_m
+1794088768.0068,-2.7809,-3.8336,-3.1992,12.65,0.0,1,0,2,-3.835,-2.777,-0.004,77.41,0.101,0.628,2551,0,0.0565,0.1583,0.994,13.59,85.95,-0.3492,0.8433,-0.4085,-0.9215,2.003

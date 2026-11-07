@@ -1,0 +1,104 @@
+diff --git a/container_scripts/run_slam.sh b/container_scripts/run_slam.sh
+index e7f10ce..8e37e21 100755
+--- a/container_scripts/run_slam.sh
++++ b/container_scripts/run_slam.sh
+@@ -69,4 +69,53 @@ fi
+ 
+ echo "[slam] camera pose (FLU): xyz=${CAMERA_X} ${CAMERA_Y} ${CAMERA_Z} m" \
+      "rpy=${CAMERA_ROLL} ${CAMERA_PITCH} ${CAMERA_YAW} rad"
++
++# --- depth profile (opt-in, SKYBETA_SLAM_PROFILE=depth; see host/run.sh) ----------
++# Same pipeline plus the driver's on-device StereoDepth node: /oak/stereo/image_raw,
++# 16UC1 mm, 640x400 @30 Hz with 640x400 VIO images (2026-11-07 sweep), frame oak_rgb_camera_optical_frame,
++# no readings closer than ~0.31 m, 0 = no depth (unknown, NOT free space).
++# The config is generated from this image's own stock files at every start, so it
++# always matches the installed driver. Anything that fails falls back to the stock
++# launch: a slam window that exits would make the stack service restart everything.
++make_depth_launch() {
++  local share out=/tmp/skybeta_depth
++  share="$(ros2 pkg prefix --share oakd_vslam_bringup 2>/dev/null)" || return 1
++  mkdir -p "${out}" || return 1
++  sed 's/i_pipeline_type: stereo/i_pipeline_type: depth/' \
++    "${share}/config/oakd_vslam.yaml" > "${out}/depth.yaml" || return 1
++  python3 - "${out}/depth.yaml" <<'PY' || return 1
++import sys, yaml
++p = sys.argv[1]
++s = open(p).read()
++block = ("    stereo:\n      i_publish_topic: true\n      i_width: 640\n      i_height: 400\n"
++         "      i_subpixel: true\n      i_extended_disparity: false\n      i_lr_check: true\n")
++i = s.index('    pipeline_gen:')
++s = s[:i] + block + s[i:]
++# 640x400 VIO images + sharp depth (drone 7 sweep 2026-11-07, 'd_640s+nopreset'): VIO 30 Hz,
++# 0 gaps, VIO age p95 39 ms (stock 67 ms). No i_depth_preset: DEFAULT decimates depth to 320x200.
++s = s.replace('i_width: 1024', 'i_width: 640').replace('i_height: 640', 'i_height: 400')
++open(p, 'w').write(s)
++node = next(iter(yaml.safe_load(s).values()))['ros__parameters']
++assert node['pipeline_gen']['i_pipeline_type'] == 'depth'
++assert node['stereo']['i_publish_topic'] is True
++assert node['left']['i_width'] == 640 and node['right']['i_height'] == 400
++assert node['stereo']['i_width'] == 640 and 'i_depth_preset' not in node['stereo']
++PY
++  sed "s#os.path.join(bringup_share, 'config', 'oakd_vslam.yaml')#'${out}/depth.yaml'#" \
++    "${share}/launch/oakd_vslam.launch.py" > "${out}/depth.launch.py" || return 1
++  grep -q "'${out}/depth.yaml'" "${out}/depth.launch.py" || return 1
++  python3 -m py_compile "${out}/depth.launch.py" || return 1
++  echo "${out}/depth.launch.py"
++}
++
++if [[ "${SKYBETA_SLAM_PROFILE:-stock}" == "depth" ]]; then
++  if depth_launch="$(make_depth_launch)"; then
++    echo "[slam] profile: depth -- ${depth_launch}"
++    rc=0
++    ros2 launch "${depth_launch}" "${LAUNCH_ARGS[@]}" || rc=$?
++    echo "[slam] WARNING: depth launch exited (rc=${rc}); falling back to the stock pipeline (NO depth)" >&2
++  else
++    echo "[slam] WARNING: could not build the depth config; starting the stock pipeline (NO depth)" >&2
++  fi
++fi
+ exec ros2 launch oakd_vslam_bringup oakd_vslam.launch.py "${LAUNCH_ARGS[@]}"
+diff --git a/host/drone_env.sh b/host/drone_env.sh
+index 62f8a63..0416cbd 100644
+--- a/host/drone_env.sh
++++ b/host/drone_env.sh
+@@ -20,6 +20,7 @@ SKYBETA_DRONE_ENV_KEYS=(
+   CAMERA_X CAMERA_Y CAMERA_Z CAMERA_ROLL CAMERA_PITCH CAMERA_YAW
+   COMPETITOR_PKG COMPETITOR_LAUNCH
+   TEAM_WS
++  SKYBETA_SLAM_PROFILE
+ )
+ 
+ # Highest domain ID whose RTPS ports (7400 + 250*domain + offsets) stay below
+diff --git a/host/run.sh b/host/run.sh
+index 0d0cb47..03d823a 100755
+--- a/host/run.sh
++++ b/host/run.sh
+@@ -288,6 +288,29 @@ TEAM_ARG=(
+   -e COMPETITOR_LAUNCH
+ )
+ 
++# --- camera pipeline profile (opt-in) ---------------------------------------------
++# stock (default): unchanged.  depth: the camera also streams on-device depth
++# (/oak/stereo/image_raw) from boot, for obstacle avoidance. Set it with
++# SKYBETA_SLAM_PROFILE=depth in drone.env, or, without sudo, by writing the word
++# "depth" into $TEAM_WS/slam_profile. The repo's run_slam.sh (which knows the
++# profile) is mounted over the image's copy, so no image rebuild is needed; it falls
++# back to the stock pipeline if the depth launch cannot start.
++if [[ -z "${SKYBETA_SLAM_PROFILE:-}" && -f "${TEAM_WS}/slam_profile" ]]; then
++  SKYBETA_SLAM_PROFILE="$(awk 'NF {print $1; exit}' "${TEAM_WS}/slam_profile")"
++fi
++SKYBETA_SLAM_PROFILE="${SKYBETA_SLAM_PROFILE:-stock}"
++case "${SKYBETA_SLAM_PROFILE}" in
++  stock) ;;
++  depth)
++    log "camera profile: depth (on-device depth from boot; 640x400 VIO + 640x400 depth, VIO 30 Hz measured)"
++    TEAM_ARG+=(
++      -e SKYBETA_SLAM_PROFILE=depth
++      -v "${REPO}/container_scripts/run_slam.sh:/usr/local/bin/run_slam.sh:ro"
++    )
++    ;;
++  *) warn "unknown SKYBETA_SLAM_PROFILE='${SKYBETA_SLAM_PROFILE}' -- using stock" ;;
++esac
++
+ # --- camera pose -----------------------------------------------------------
+ CAMERA_X="${1:-${CAMERA_X:-0.0}}"
+ CAMERA_Y="${2:-${CAMERA_Y:-0.0}}"

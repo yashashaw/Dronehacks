@@ -484,7 +484,7 @@ def main():
                         # never reverse along the leg (no-backtrack rule).
                         if along > best_along + 0.03:
                             best_along, t_prog = along, time.time()
-                        elif s < L and s - along > 0.10 and time.time() - t_prog > 2.5 and blocked_since is None:
+                        elif along > 0.15 and s < L and s - along > 0.10 and time.time() - t_prog > 2.5 and blocked_since is None:
                             if sidesteps >= 3:
                                 log('WP leg %d: stuck after %d sidesteps at %.2f/%.2f m -> next leg' % (i + 1, sidesteps, along, L))
                                 break

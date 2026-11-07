@@ -1,0 +1,5 @@
+path: c:/Users/peter/Documents/GitHub/Dronehacks/CV/video_training/work/initial_dataset
+train: images/train
+val: images/val
+names:
+  0: pad

@@ -1,0 +1,15 @@
+{
+  "seed": 42,
+  "val_ratio": 0.2,
+  "frame_interval": 5,
+  "train": [
+    "IMG_6181.mov",
+    "IMG_6182.mov",
+    "IMG_6183.mov",
+    "IMG_6185.mov",
+    "IMG_6186.mov"
+  ],
+  "val": [
+    "IMG_6184.mov"
+  ]
+}

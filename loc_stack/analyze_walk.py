@@ -140,7 +140,64 @@ def object_report(dwells, length, width, skip=0):
     }
 
 
-def analyze(run, speed_thr, min_dwell, obj, skip):
+# Two-sided 95 % Student-t critical values, df 1..30 (then ~1.96).
+_T95 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228,
+        2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086,
+        2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042]
+
+
+def line_report(dwells, length, skip=0, expect_legs=None, claim=0.884, truth_err_m=0.01):
+    """Back-and-forth between two floor marks LENGTH apart, holding at each mark.
+
+    Every leg between consecutive holds should be LENGTH. Returns per-leg scale
+    (measured / true), the mean with a 95 % t-interval, and whether that interval
+    excludes 1.0 (a real bias) and `claim` (the earlier 11.6 %-short reading).
+    Fails loudly when the number of holds is not what you walked, because a lost
+    or extra hold silently pairs the wrong marks.
+    """
+    pts = [d['pos'] for d in dwells][skip:]
+    legs = len(pts) - 1
+    if expect_legs is not None and legs != expect_legs:
+        return {'error': f'expected {expect_legs} legs ({expect_legs + 1} holds), found '
+                         f'{max(legs, 0)} legs ({len(pts)} holds after skip={skip}). Check '
+                         'the dwell list: hold 5 s at each mark and move steadily between '
+                         'them; use --skip for a stray hold before the first mark.'}
+    if legs < 2:
+        return {'error': f'need at least 3 holds, found {len(pts)}'}
+    l3 = [dist(a, b) for a, b in zip(pts, pts[1:])]
+    lh = [math.hypot(a[0] - b[0], a[1] - b[1]) for a, b in zip(pts, pts[1:])]
+    ratios = [v / length for v in l3]
+    n = len(ratios)
+    mean = sum(ratios) / n
+    sd = math.sqrt(sum((r - mean) ** 2 for r in ratios) / (n - 1))
+    stat = (_T95[n - 2] if n - 1 <= len(_T95) else 1.96) * sd / math.sqrt(n)
+    # The true length is only known to +/- truth_err_m (tape and mark placement), and
+    # that error is shared by every leg, so averaging does not shrink it.
+    half = math.hypot(stat, truth_err_m / length)
+    lo, hi = mean - half, mean + half
+    # marks alternate A, B, A, B ... so every even hold is back at the start mark
+    returns = [round(dist(pts[0], p), 4) for p in pts[2::2]]
+    if lo > 1.0 or hi < 1.0:
+        bias = f'real scale bias: {100 * (mean - 1):+.1f} % (95 % interval excludes 1.0)'
+    else:
+        bias = 'no significant scale bias (95 % interval includes 1.0)'
+    claim_txt = (f'{claim:.3f} is {"OUTSIDE" if (claim < lo or claim > hi) else "inside"} '
+                 'the interval')
+    return {
+        'true_length_m': length, 'legs': n,
+        'legs_3d_m': [round(v, 4) for v in l3],
+        'legs_horizontal_m': [round(v, 4) for v in lh],
+        'scale_per_leg': [round(r, 4) for r in ratios],
+        'scale_mean': round(mean, 4), 'scale_sd': round(sd, 4),
+        'scale_95ci': [round(lo, 4), round(hi, 4)],
+        'scale_error_pct': round(100 * (mean - 1), 2),
+        'verdict': f'{bias}; {claim_txt}',
+        'return_to_start_errors_m': returns,
+        'height_spread_m': round(max(p[2] for p in pts) - min(p[2] for p in pts), 4),
+    }
+
+
+def analyze(run, speed_thr, min_dwell, obj, skip, line=None, expect_legs=None):
     rows = load_odom(run)
     if len(rows) < 10:
         return {'error': f'only {len(rows)} odometry rows'}
@@ -171,6 +228,12 @@ def analyze(run, speed_thr, min_dwell, obj, skip):
         res['start_to_end_error_pct_of_path'] = round(100 * closure / plen, 2) if plen else None
     if obj:
         res['object'] = object_report(dwells, obj[0], obj[1], skip)
+    if line:
+        res['line'] = line_report(dwells, line, skip, expect_legs)
+    cfg = os.path.join(run, 'config.txt')
+    if os.path.exists(cfg):
+        with open(cfg) as f:
+            res['slam_config'] = f.read().strip()
     return res
 
 
@@ -178,12 +241,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('run', help='folder with odom.csv from walk_logger')
     ap.add_argument('--object', help='known rectangle "LENGTH,WIDTH" in metres')
+    ap.add_argument('--line', type=float,
+                    help='back-and-forth between two marks this many metres apart')
+    ap.add_argument('--legs', type=int, help='legs you walked (--line); fails if it differs')
     ap.add_argument('--skip', type=int, default=0, help='dwells to ignore before corner 1')
     ap.add_argument('--speed-thr', type=float, default=0.04)
     ap.add_argument('--min-dwell', type=float, default=1.5)
     a = ap.parse_args()
     obj = tuple(float(v) for v in a.object.split(',')) if a.object else None
-    res = analyze(a.run, a.speed_thr, a.min_dwell, obj, a.skip)
+    res = analyze(a.run, a.speed_thr, a.min_dwell, obj, a.skip, a.line, a.legs)
     text = json.dumps(res, indent=2)
     print(text)
     with open(os.path.join(a.run, 'analysis.json'), 'w') as f:

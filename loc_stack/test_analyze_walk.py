@@ -89,8 +89,70 @@ def test_stationary_has_one_dwell():
     print('stationary ok: path', res['path_length_m'], 'm')
 
 
+def synth_line(path, length, scale, legs, seed=3, noise=0.002):
+    """Back and forth between two marks, holding 5 s at each."""
+    rnd = random.Random(seed)
+    rows, t = [], 0.0
+    c, s = math.cos(HEADING), math.sin(HEADING)
+    marks = [0.0 if k % 2 == 0 else length for k in range(legs + 1)]
+
+    def emit(u):
+        nonlocal t
+        X, Y = scale * c * u, scale * s * u
+        rows.append([t, 1000 + t, X + rnd.gauss(0, noise), Y + rnd.gauss(0, noise),
+                     1.0 + rnd.gauss(0, noise), 0, 0, 0, 1, 0, 0, 0])
+        t += 1.0 / HZ
+
+    for k, u in enumerate(marks):
+        for _ in range(5 * HZ):
+            emit(u)
+        if k + 1 < len(marks):
+            n = int(MOVE_S * HZ)
+            for i in range(1, n + 1):
+                emit(u + (marks[k + 1] - u) * (0.5 - 0.5 * math.cos(math.pi * i / n)))
+    os.makedirs(path, exist_ok=True)
+    with open(os.path.join(path, 'odom.csv'), 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(['recv_s', 'stamp_s', 'x', 'y', 'z', 'qx', 'qy', 'qz', 'qw', 'vx', 'vy', 'vz'])
+        w.writerows(rows)
+
+
+def test_line_detects_short_scale():
+    with tempfile.TemporaryDirectory() as d:
+        synth_line(d, 3.0, 0.884, 6)
+        res = aw.analyze(d, 0.04, 1.5, None, 0, line=3.0, expect_legs=6)
+    ln = res['line']
+    assert ln['legs'] == 6, ln
+    assert abs(ln['scale_mean'] - 0.884) < 0.01, ln
+    assert ln['verdict'].startswith('real scale bias'), ln
+    assert 'inside' in ln['verdict'], ln
+    print('line short ok:', ln['scale_mean'], ln['scale_95ci'])
+
+
+def test_line_unbiased_rejects_claim():
+    with tempfile.TemporaryDirectory() as d:
+        synth_line(d, 3.0, 1.0, 6)
+        res = aw.analyze(d, 0.04, 1.5, None, 0, line=3.0, expect_legs=6)
+    ln = res['line']
+    assert ln['verdict'].startswith('no significant'), ln
+    assert 'OUTSIDE' in ln['verdict'], ln
+    assert all(e < 0.02 for e in ln['return_to_start_errors_m']), ln
+    print('line unbiased ok:', ln['scale_mean'], ln['scale_95ci'])
+
+
+def test_line_wrong_hold_count_fails_loudly():
+    with tempfile.TemporaryDirectory() as d:
+        synth_line(d, 3.0, 1.0, 6)
+        res = aw.analyze(d, 0.04, 1.5, None, 0, line=3.0, expect_legs=8)
+    assert 'error' in res['line'] and 'expected 8 legs' in res['line']['error'], res['line']
+    print('line hold-count check ok')
+
+
 if __name__ == '__main__':
     test_object_mapping()
     test_swapped_edge_order()
     test_stationary_has_one_dwell()
+    test_line_detects_short_scale()
+    test_line_unbiased_rejects_claim()
+    test_line_wrong_hold_count_fails_loudly()
     print('ALL PASS')

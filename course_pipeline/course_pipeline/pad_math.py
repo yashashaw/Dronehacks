@@ -117,3 +117,18 @@ class Confirmer:
         self._previous = position
         self.count += 1
         return self.count >= self.frames
+
+
+def quat_is_zero(x, y, z, w):
+    """True for the all-zero quaternion that means "no orientation given"."""
+    return x * x + y * y + z * z + w * w < 1e-9
+
+
+def quat_to_yaw(x, y, z, w):
+    """Heading about +z (ENU) of a quaternion, radians."""
+    return math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
+
+
+def yaw_to_quat(yaw):
+    """Quaternion (x, y, z, w) for a pure heading about +z."""
+    return 0.0, 0.0, math.sin(yaw / 2.0), math.cos(yaw / 2.0)

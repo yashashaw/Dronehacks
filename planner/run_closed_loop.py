@@ -9,17 +9,16 @@ import random
 import sys
 import time
 
-from course_fixture import build_world, write_png
+from course_fixture import LAUNCH, PAD, WINDOW_CENTRE, build_world, write_png
 from navigator import NavParams, Navigator
+from reactive import ReactiveNavigator
 from sensing import (Estimator, EstimatorParams, LatencyParams, SensorParams, Vehicle,
                      VehicleParams, detect_pad, scan)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OBJ = os.path.join(HERE, "..", "dronehacks-course-v3.obj")
-LAUNCH, PAD = (-2.515, 0.914), (-2.042, -0.792)
-WINDOW_CENTRE = (-0.47, -2.27)   # metric only: did the flight cross the window?
 PAD_RADIUS = 0.762      # outer ring, 30 in
-DT = 1 / 20             # depth/estimate rate; the driver delivers 27-30 Hz images, about 20 Hz under load
+DT = 1 / 28             # depth.mp4 implies about 28 depth frames per second
 TIME_LIMIT = 180.0
 TOUCH_PENALTY = 5.0
 
@@ -30,13 +29,13 @@ def _rotor_positions(drone, veh):
 
 
 def fly(world, seed, nav_params=None, sensor=None, est=None, veh=None, latency=None, altitude=0.76,
-        verbose=False):
+        strategy="map", verbose=False):
     rng = random.Random(seed)
     sensor, est, veh = sensor or SensorParams(), est or EstimatorParams(), veh or VehicleParams()
     latency = latency or LatencyParams()
-    estimator = Estimator(LAUNCH, est, rng)
-    drone = Vehicle(LAUNCH, math.pi / 2, veh, rng, altitude)
-    nav = Navigator(0.05, nav_params)  # the map starts small at the launch point and grows
+    estimator = Estimator(world.launch, est, rng)
+    drone = Vehicle(world.launch, math.pi / 2, veh, rng, altitude)
+    nav = ReactiveNavigator() if strategy == "reactive" else Navigator(0.05, nav_params)  # the map starts small and grows
     flat = world.union_grid(altitude - sensor.belly - sensor.margin_v, altitude + sensor.top + sensor.margin_v)
     trail, hits, touches, touching, t, result = [], [], 0, False, 0.0, "timeout"
     inbox, last_idx, cmd = [], -1, ((0.0, 0.0), drone.yaw)
@@ -45,7 +44,7 @@ def fly(world, seed, nav_params=None, sensor=None, est=None, veh=None, latency=N
         cam = (pos[0] + sensor.cam_forward * math.cos(yaw), pos[1] + sensor.cam_forward * math.sin(yaw))
         inbox.append((estimator.estimate(pos, yaw),
                       scan(world, cam, drone.z + rng.gauss(0, 0.02), yaw, sensor, rng),
-                      detect_pad(flat, pos, yaw, PAD, sensor, rng)))
+                      detect_pad(flat, pos, yaw, world.pad, sensor, rng)))
         # what the navigator receives is stale by the camera-to-command delay
         lag = rng.uniform(*latency.slow_s) if rng.random() < latency.p_slow else rng.uniform(*latency.fast_s)
         idx = min(len(inbox) - 1, max(last_idx, len(inbox) - 1 - round(lag / DT)))
@@ -95,14 +94,14 @@ def fly(world, seed, nav_params=None, sensor=None, est=None, veh=None, latency=N
             hits.append((round(drone.pos[0], 2), round(drone.pos[1], 2)))
         touching = in_contact
         if nav.status == "landing":
-            inside = max(math.dist(p, PAD) for p in _rotor_positions(drone, veh)) + veh.prop_radius <= PAD_RADIUS
+            inside = max(math.dist(p, world.pad) for p in _rotor_positions(drone, veh)) + veh.prop_radius <= PAD_RADIUS
             result = "landed" if inside else "landed_outside_ring"
             break
         if verbose and int(t * 1000) % 1000 < DT * 1000:
             print(f"t={t:5.1f} pos=({drone.pos[0]:.2f},{drone.pos[1]:.2f}) {nav.status}")
     length = sum(math.dist(a, b) for a, b in zip(trail, trail[1:]))
     return dict(seed=seed, result=result, time=t, scored=t + TOUCH_PENALTY * touches, touches=touches,
-                hits=hits, via_window=any(math.dist(p, WINDOW_CENTRE) < 0.35 for p in trail), length=length, drift=math.hypot(estimator.tx, estimator.ty),
+                hits=hits, via_window=any(math.dist(p, world.window) < 0.35 for p in trail), launch=world.launch, plan_calls=nav.plan_calls, plan_time=nav.plan_time, length=length, drift=math.hypot(estimator.tx, estimator.ty),
                 yaw_err=math.degrees(estimator.theta), nav=nav, trail=trail, flat=flat)
 
 
@@ -114,7 +113,7 @@ def render(world, run, filename, scale=4):
         row = bytearray()
         for cx in range(flat.w):
             x, y = flat.to_world(cx, cy)
-            m = g.to_cell(x - LAUNCH[0], y - LAUNCH[1])  # nav grid is launch-centred
+            m = g.to_cell(x - run["launch"][0], y - run["launch"][1])  # nav grid is launch-centred
             known = g.inside(*m) and g.cells[m[1] * g.w + m[0]]
             truth_wall = flat.cells[cy * flat.w + cx] == 1
             if (cx, cy) in on_trail:

@@ -144,3 +144,12 @@ def test_quarter_turn_about_z_takes_x_to_y():
 def test_zero_quaternion_is_rejected():
     with pytest.raises(ValueError):
         quat_to_matrix(0, 0, 0, 0)
+
+
+def test_yaw_quaternion_round_trip():
+    import math
+    from course_pipeline.pad_math import quat_is_zero, quat_to_yaw, yaw_to_quat
+    for yaw in (-3.0, -1.0, 0.0, 0.7, 2.5):
+        assert abs(quat_to_yaw(*yaw_to_quat(yaw)) - yaw) < 1e-9
+    assert quat_is_zero(0.0, 0.0, 0.0, 0.0)
+    assert not quat_is_zero(*yaw_to_quat(0.0))

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>team_planner</name>
+  <version>0.1.0</version>
+  <description>
+    Depth-based path planner for the skybeta drone: turns the OAK-D depth image and the VIO pose
+    into /course/goal for course_pipeline's pad_guide. Written against the repo docs, not yet run
+    on a drone.
+  </description>
+  <maintainer email="team@example.com">DroneHacks team</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>course_pipeline</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

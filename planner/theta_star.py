@@ -101,7 +101,7 @@ class Grid:
         return self._clr
 
 
-def _edge_py(clr, cells, w, x0, y0, x1, y1, radius, margin, weight, res):
+def _edge_py(clr, cells, w, x0, y0, x1, y1, radius, margin, weight, res, worst=False):
     """Bresenham line of sight from (x0,y0) to (x1,y1): cost of the segment, or -1 if blocked."""
     ax, ay = x0, y0
     dx, dy = abs(x1 - x0), abs(y1 - y0)
@@ -109,6 +109,7 @@ def _edge_py(clr, cells, w, x0, y0, x1, y1, radius, margin, weight, res):
     sy = 1 if y0 < y1 else -1
     err = dx - dy
     pen = 0.0
+    pmax = 0.0
     n = 0
     while True:
         i = y0 * w + x0
@@ -116,7 +117,10 @@ def _edge_py(clr, cells, w, x0, y0, x1, y1, radius, margin, weight, res):
         if c < radius or cells[i] != 0:
             return -1.0
         if c < radius + margin:
-            pen += (radius + margin - c) / margin
+            q = (radius + margin - c) / margin
+            pen += q
+            if q > pmax:
+                pmax = q
         n += 1
         if x0 == x1 and y0 == y1:
             break
@@ -127,14 +131,15 @@ def _edge_py(clr, cells, w, x0, y0, x1, y1, radius, margin, weight, res):
         if e2 < dx:
             err += dx
             y0 += sy
-    return math.sqrt((x1 - ax) ** 2 + (y1 - ay) ** 2) * res * (1 + weight * pen / n)
+    p = pmax if worst else pen / n
+    return math.sqrt((x1 - ax) ** 2 + (y1 - ay) ** 2) * res * (1 + weight * p)
 
 
 _edge = njit(cache=True)(_edge_py) if njit is not None else _edge_py
 
 
-def _search_py(clr, cells, w, h, sx, sy, gx, gy, radius, margin, weight, res):
-    """Theta* on flat arrays. Returns (found, cost, path) with path as flat cell indices."""
+def _search_py(clr, cells, w, h, sx, sy, gx, gy, radius, margin, weight, res, any_angle, worst):
+    """Theta* (any_angle) or plain A* on flat arrays. Returns (found, cost, path) as flat cell indices."""
     n = w * h
     gs = np.full(n, 1e30)
     parent = np.full(n, -1, np.int64)
@@ -170,13 +175,13 @@ def _search_py(clr, cells, w, h, sx, sy, gx, gy, radius, margin, weight, res):
                 continue
             cand = 0.0
             par = -1
-            if p != c:
-                e = _edge(clr, cells, w, px, py, nx, ny, radius, margin, weight, res)
+            if any_angle and p != c:
+                e = _edge(clr, cells, w, px, py, nx, ny, radius, margin, weight, res, worst)
                 if e >= 0:
                     cand = gs[p] + e
                     par = p
             if par < 0:
-                e = _edge(clr, cells, w, cx, cy, nx, ny, radius, margin, weight, res)
+                e = _edge(clr, cells, w, cx, cy, nx, ny, radius, margin, weight, res, worst)
                 if e < 0:
                     continue
                 cand = gs[c] + e
@@ -205,10 +210,119 @@ def _search_py(clr, cells, w, h, sx, sy, gx, gy, radius, margin, weight, res):
 _search = njit(cache=True)(_search_py) if njit is not None else None
 
 
-def theta_star(grid, start, goal, radius, margin=0.3, weight=2.0):
-    """Return (path, cost) from start to goal in world metres, or None. See the reference
-    implementation below for the meaning of the arguments."""
+def _rrt_py(clr, cells, w, h, sx, sy, gx, gy, radius, margin, weight, res, fx, fy, iters, seed, goal_bias, step):
+    """Goal-biased RRT on the grid. Returns (found, path as flat cell indices)."""
+    np.random.seed(seed)
+    nx = np.empty(iters + 2, np.int64)
+    ny = np.empty(iters + 2, np.int64)
+    par = np.zeros(iters + 2, np.int64)
+    nx[0] = sx
+    ny[0] = sy
+    n = 1
+    found = False
+    if _edge(clr, cells, w, sx, sy, gx, gy, radius, margin, weight, res) >= 0:
+        nx[1] = gx
+        ny[1] = gy
+        par[1] = 0
+        n = 2
+        found = True
+    it = 0
+    while not found and it < iters:
+        it += 1
+        if np.random.random() < goal_bias:
+            tx = gx
+            ty = gy
+        else:
+            k = np.random.randint(0, len(fx))
+            tx = fx[k]
+            ty = fy[k]
+        best = 0
+        bd = 1e30
+        for i in range(n):
+            d = float((nx[i] - tx) ** 2 + (ny[i] - ty) ** 2)
+            if d < bd:
+                bd = d
+                best = i
+        dx = float(tx - nx[best])
+        dy = float(ty - ny[best])
+        dist = math.sqrt(dx * dx + dy * dy)
+        if dist < 1.0:
+            continue
+        if dist > step:
+            qx = nx[best] + int(round(dx / dist * step))
+            qy = ny[best] + int(round(dy / dist * step))
+        else:
+            qx = tx
+            qy = ty
+        if qx < 0 or qx >= w or qy < 0 or qy >= h:
+            continue
+        qi = qy * w + qx
+        if cells[qi] != 0 or clr[qi] < radius:
+            continue
+        if _edge(clr, cells, w, nx[best], ny[best], qx, qy, radius, margin, weight, res) < 0:
+            continue
+        nx[n] = qx
+        ny[n] = qy
+        par[n] = best
+        n += 1
+        if _edge(clr, cells, w, qx, qy, gx, gy, radius, margin, weight, res) >= 0:
+            nx[n] = gx
+            ny[n] = gy
+            par[n] = n - 1
+            n += 1
+            found = True
+    if not found:
+        return False, np.empty(0, np.int64)
+    cnt = 1
+    c = n - 1
+    while c != 0:
+        cnt += 1
+        c = par[c]
+    path = np.empty(cnt, np.int64)
+    c = n - 1
+    for i in range(cnt - 1, -1, -1):
+        path[i] = ny[c] * w + nx[c]
+        c = par[c]
+    return True, path
+
+
+_rrt = njit(cache=True)(_rrt_py) if njit is not None else None
+
+
+def _shortcut(cells_xy, clr, cells, w, radius, margin, weight, res):
+    """Greedy string-pulling: from each vertex jump to the farthest one it can see."""
+    out = [cells_xy[0]]
+    total = 0.0
+    i = 0
+    while i < len(cells_xy) - 1:
+        j = len(cells_xy) - 1
+        c = -1.0
+        while j > i:
+            c = _edge(clr, cells, w, cells_xy[i][0], cells_xy[i][1], cells_xy[j][0], cells_xy[j][1],
+                      radius, margin, weight, res)
+            if c >= 0:
+                break
+            j -= 1
+        if c < 0:  # cannot happen for a valid path, but never loop forever
+            j = i + 1
+            c = 0.0
+        total += c
+        out.append(cells_xy[j])
+        i = j
+    return out, total
+
+
+def theta_star(grid, start, goal, radius, margin=0.3, weight=2.0, mode="theta"):
+    """Return (path, cost) from start to goal in world metres, or None.
+
+    mode: "theta" (any-angle Theta*), "theta_safe" (Theta* that scores a segment by its worst clearance,
+    not the average), "astar" (plain 8-neighbour A*), "astar_smooth" (A* then
+    shortcutting), "rrt_smooth" (goal-biased RRT then shortcutting). The non-default modes exist
+    for benchmarking. See the reference implementation below for the meaning of the arguments.
+    """
     if _search is None:
+        if mode != "theta":
+            raise NotImplementedError("benchmark planners need numba")
         return _theta_star_python(grid, start, goal, radius, margin, weight)
     w, res = grid.w, grid.res
     radius += res
@@ -218,10 +332,20 @@ def theta_star(grid, start, goal, radius, margin=0.3, weight=2.0):
     for cx, cy in (s, g):
         if not grid.inside(cx, cy) or cells[cy * w + cx] != FREE or clr[cy * w + cx] < radius:
             return None
-    found, cost, path = _search(clr, cells, w, grid.h, s[0], s[1], g[0], g[1], radius, margin, weight, res)
+    if mode == "rrt_smooth":
+        idx = np.nonzero((cells == 0) & (clr >= radius))[0]
+        found, path = _rrt(clr, cells, w, grid.h, s[0], s[1], g[0], g[1], radius, margin, weight, res,
+                           idx % w, idx // w, 1500, 1, 0.15, 20)
+        cost = 0.0
+    else:
+        found, cost, path = _search(clr, cells, w, grid.h, s[0], s[1], g[0], g[1], radius, margin, weight, res,
+                                    mode in ("theta", "theta_safe"), mode == "theta_safe")
     if not found:
         return None
-    return [grid.to_world(int(i % w), int(i // w)) for i in path], float(cost)
+    pts = [(int(i % w), int(i // w)) for i in path]
+    if mode in ("astar_smooth", "rrt_smooth"):
+        pts, cost = _shortcut(pts, clr, cells, w, radius, margin, weight, res)
+    return [grid.to_world(x, y) for x, y in pts], float(cost)
 
 
 def _theta_star_python(grid, start, goal, radius, margin=0.3, weight=2.0):

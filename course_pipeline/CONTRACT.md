@@ -30,7 +30,7 @@ No node here publishes `/fmu/in/*` or `/skybeta/setpoint/twist`.
 
 ### `/course/goal` (what the real pathfinder must publish)
 
-- `PoseStamped`, position in `odom` (ENU, metres). Orientation is ignored.
+- `PoseStamped`, position in `odom` (ENU, metres). **Orientation is the heading to hold while following** (a normal quaternion about +z); an all-zero quaternion means no heading, and PX4 keeps the one it has. The guide only forwards it in FOLLOW, and only while the goal is fresh. *(Added on the `integration` branch so a forward-looking camera can face the way the planner steers.)*
 - Publish it **continuously while the drone flies**, whenever the chosen point changes and at least every 0.5 s even when it does not (the placeholder uses 5 Hz). The guide treats a goal it has not received for 0.5 s as stale and holds.
 - Staleness is measured from when the guide **received** the message, not from `header.stamp`.
 - The goal can be far away. The guide never forwards it: each tick it publishes a pose at most `step_m` (default 0.5 m) from the vehicle toward the newest goal.

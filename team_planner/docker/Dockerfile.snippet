@@ -1,0 +1,6 @@
+# Add this to ~/team_ws/Dockerfile (written by `host/run.sh build --init`), then `host/run.sh build`.
+# Never `pip install` in a running container: it vanishes on exit.
+#
+# UNVERIFIED on the Jetson: check these wheels exist for aarch64 / Python 3.10 before relying on them.
+# The base image pins numpy<2, so scipy and numba must match it.
+RUN pip3 install --no-cache-dir "numpy<2" "scipy==1.11.4" "numba==0.59.1"

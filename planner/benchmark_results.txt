@@ -1,0 +1,56 @@
+BENCHMARK  main course: 50 flights per cell; changed layouts: 10 per layout x 8 layouts
+success = landed in the pad ring; interval is a 95% Wilson interval; time/touch/scored/path are medians
+scored = flight time + 5 s per touch (landed flights); plan = mean route-finder time on this laptop (Jetson is ~4x slower)
+
+== Part A, this course, normal noise
+  Theta* (ours)         50/50  (100%, 93-100%) crash  0 t/o  0 time  45.2 touch  2.0 scored   56.0 path 15.6m plan  2.52 ms/call
+  Theta* corner-safe    50/50  (100%, 93-100%) crash  0 t/o  0 time  42.5 touch  5.0 scored   69.9 path 14.9m plan  1.80 ms/call
+  A* (no smoothing)     50/50  (100%, 93-100%) crash  0 t/o  0 time  47.1 touch  0.0 scored   47.2 path 16.6m plan  1.06 ms/call
+  A* + shortcut         50/50  (100%, 93-100%) crash  0 t/o  0 time  43.2 touch  1.0 scored   51.8 path 15.0m plan  1.42 ms/call
+  RRT + shortcut        38/50  ( 76%, 63- 86%) crash  0 t/o 12 time  63.4 touch  0.0 scored   66.2 path 18.6m plan  1.98 ms/call
+  Reactive, no map       0/50  (  0%,  0-  7%) crash 44 t/o  6 time   nan touch  0.0 scored    nan path  nanm plan   nan ms/call
+
+== Part A, this course, drift x2
+  Theta* (ours)         49/50  ( 98%, 90-100%) crash  0 t/o  1 time  50.7 touch  3.0 scored   64.2 path 16.6m plan  1.66 ms/call
+  Theta* corner-safe    49/50  ( 98%, 90-100%) crash  0 t/o  1 time  49.0 touch  5.0 scored   75.1 path 16.4m plan  1.70 ms/call
+  A* (no smoothing)     48/50  ( 96%, 87- 99%) crash  0 t/o  2 time  51.0 touch  0.0 scored   51.9 path 17.2m plan  0.93 ms/call
+  A* + shortcut         49/50  ( 98%, 90-100%) crash  0 t/o  1 time  48.1 touch  3.0 scored   63.2 path 16.0m plan  1.10 ms/call
+  RRT + shortcut        45/50  ( 90%, 79- 96%) crash  0 t/o  5 time  66.0 touch  1.0 scored   68.7 path 18.5m plan  0.89 ms/call
+  Reactive, no map       0/50  (  0%,  0-  7%) crash 42 t/o  8 time   nan touch  1.5 scored    nan path  nanm plan   nan ms/call
+
+== Part A, this course, drift x4
+  Theta* (ours)         41/50  ( 82%, 69- 90%) crash  0 t/o  9 time  66.0 touch 12.0 scored  107.5 path 20.0m plan  1.52 ms/call
+  Theta* corner-safe    43/50  ( 86%, 74- 93%) crash  0 t/o  7 time  73.7 touch 21.0 scored  159.7 path 20.0m plan  1.72 ms/call
+  A* (no smoothing)     42/50  ( 84%, 71- 92%) crash  0 t/o  8 time  66.9 touch  1.5 scored   71.4 path 20.1m plan  1.22 ms/call
+  A* + shortcut         43/50  ( 86%, 74- 93%) crash  1 t/o  6 time  65.0 touch 15.0 scored  125.0 path 18.8m plan  1.15 ms/call
+  RRT + shortcut        33/50  ( 66%, 52- 78%) crash  0 t/o 17 time  82.4 touch  6.0 scored  113.1 path 21.1m plan  0.98 ms/call
+  Reactive, no map       0/50  (  0%,  0-  7%) crash 47 t/o  3 time   nan touch  1.0 scored    nan path  nanm plan   nan ms/call
+
+== Part A, this course, depth range 3 m
+  Theta* (ours)         50/50  (100%, 93-100%) crash  0 t/o  0 time  46.1 touch  1.5 scored   55.8 path 15.5m plan  1.38 ms/call
+  Theta* corner-safe    49/50  ( 98%, 90-100%) crash  0 t/o  1 time  43.5 touch  5.0 scored   70.9 path 14.9m plan  1.37 ms/call
+  A* (no smoothing)     47/50  ( 94%, 84- 98%) crash  0 t/o  3 time  50.9 touch  0.0 scored   50.9 path 16.8m plan  0.82 ms/call
+  A* + shortcut         49/50  ( 98%, 90-100%) crash  0 t/o  1 time  46.9 touch  1.0 scored   58.0 path 15.5m plan  1.03 ms/call
+  RRT + shortcut        47/50  ( 94%, 84- 98%) crash  0 t/o  3 time  70.1 touch  0.0 scored   75.9 path 19.9m plan  0.74 ms/call
+  Reactive, no map       0/50  (  0%,  0-  7%) crash 47 t/o  3 time   nan touch  0.0 scored    nan path  nanm plan   nan ms/call
+
+== Part B, changed layouts, all layouts pooled
+  Theta* (ours)         80/80  (100%, 95-100%) crash  0 t/o  0 time  45.7 touch  3.0 scored   66.0 path 15.7m plan  1.58 ms/call
+  Theta* corner-safe    80/80  (100%, 95-100%) crash  0 t/o  0 time  42.5 touch  6.0 scored   74.5 path 14.9m plan  1.48 ms/call
+  A* (no smoothing)     80/80  (100%, 95-100%) crash  0 t/o  0 time  47.2 touch  0.0 scored   47.4 path 16.5m plan  0.98 ms/call
+  A* + shortcut         80/80  (100%, 95-100%) crash  0 t/o  0 time  45.0 touch  2.0 scored   58.7 path 15.5m plan  1.09 ms/call
+  RRT + shortcut        67/80  ( 84%, 74- 90%) crash  0 t/o 13 time  63.8 touch  1.0 scored   70.6 path 18.7m plan  1.01 ms/call
+  Reactive, no map       1/80  (  1%,  0-  7%) crash 71 t/o  8 time  43.0 touch  0.0 scored  588.0 path 24.4m plan   nan ms/call
+
+== Part B, landed per layout (of 10 flights)
+  layout                                         Theta* (ours)  Theta* corner-  A* (no smoothi   A* + shortcut  RRT + shortcut  Reactive, no m
+  walls shifted ~3 cm                                       10              10              10              10               9               1
+  walls shifted ~5 cm                                       10              10              10              10              10               0
+  rotated +2 deg                                            10              10              10              10              10               0
+  rotated -2 deg, shifted 2 cm                              10              10              10              10               7               0
+  gaps narrower by 4 cm                                     10              10              10              10               9               0
+  gaps narrower by 8 cm                                     10              10              10              10               8               0
+  3 extra obstacles                                         10              10              10              10               5               0
+  mixed: shift, rotate, narrow, 2 obstacles                 10              10              10              10               9               0
+
+wall time 1476 s

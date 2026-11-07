@@ -5,6 +5,7 @@ from the mesh; the tunnel is approximated as two side strips and boulders as cir
 Coordinates are the OBJ's (metres, Z up, origin at floor centre).
 """
 import math
+import random
 import struct
 import zlib
 
@@ -13,6 +14,9 @@ import numpy as np
 from theta_star import FREE, OCC, Grid
 
 NET = 3.048
+LAUNCH, PAD = (-2.515, 0.914), (-2.042, -0.792)  # launch mark, pad centre (course frame)
+WINDOW_CENTRE = (-0.47, -2.27)                    # metric only: did the flight cross the window?
+_SKIP = ("Net", "Floor", "Landing", "Guideline", "Launch", "Approach ring", "Tube cradle")
 WALL_WORDS = ("wall", "divider", "Barrier", "approach")
 
 
@@ -84,7 +88,23 @@ def _wall_footprints(verts, z):
     return [_hull(ends[:2] + edges[:2]), _hull(edges[2:] + ends[2:])]
 
 
-def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=(), groups=None):
+def _rotate(p, deg):
+    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+    return c * p[0] - s * p[1], s * p[0] + c * p[1]
+
+
+def _perturb_verts(name, verts, perturb):
+    """Rotate the whole course about its centre and nudge this piece by a seeded random shift."""
+    rng = random.Random(f"{perturb.get('seed', 0)}-{name}")
+    sx, sy = rng.gauss(0, perturb.get("jitter", 0.0)), rng.gauss(0, perturb.get("jitter", 0.0))
+    out = set()
+    for x, y, z in verts:
+        rx, ry = _rotate((x, y), perturb.get("rot_deg", 0.0))
+        out.add((rx + sx, ry + sy, z))
+    return out
+
+
+def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=(), groups=None, perturb=None):
     """extra_blocks: (xmin, ymin, xmax, ymax) rectangles to mark occupied, for what-if tests."""
     groups = groups or load_groups(obj_path)
     n = int(math.ceil(2 * NET / res))
@@ -93,20 +113,23 @@ def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=(), group
         zs = [v[2] for v in verts]
         if not min(zs) - 1e-6 <= z <= max(zs) + 1e-6:
             continue
+        if perturb and not name.startswith(_SKIP):
+            verts = _perturb_verts(name, verts, perturb)
+        grow = (perturb or {}).get("grow", 0.0)
         if any(word in name for word in WALL_WORDS) and not name.startswith("Net"):
             for poly in _wall_footprints(verts, z):
-                _fill_polygon(grid, poly, res / 2)
+                _fill_polygon(grid, poly, res / 2 + grow)
         elif name.startswith("Tube oval"):
             xs, ys = [v[0] for v in verts], [v[1] for v in verts]
             for x0, x1 in ((min(xs), min(xs) + 0.05), (max(xs) - 0.05, max(xs))):
-                _fill_polygon(grid, [(x0, min(ys)), (x1, min(ys)), (x1, max(ys)), (x0, max(ys))], res / 2)
+                _fill_polygon(grid, [(x0, min(ys)), (x1, min(ys)), (x1, max(ys)), (x0, max(ys))], res / 2 + grow)
         elif boulders and name.startswith("Boulder"):
             xs, ys = [v[0] for v in verts], [v[1] for v in verts]
             cx, cy, r = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (max(xs) - min(xs)) / 2
             for gy in range(grid.h):
                 for gx in range(grid.w):
                     x, y = grid.to_world(gx, gy)
-                    if math.hypot(x - cx, y - cy) <= r + res / 2:
+                    if math.hypot(x - cx, y - cy) <= r + res / 2 + grow:
                         grid.set(gx, gy, OCC)
     for x0, y0, x1, y1 in extra_blocks:
         _fill_polygon(grid, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], res / 2)
@@ -116,8 +139,9 @@ def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=(), group
 class World:
     """Course as horizontal layers: (z_lo, z_hi, Grid). Within a layer the footprint is constant."""
 
-    def __init__(self, layers):
+    def __init__(self, layers, launch=LAUNCH, pad=PAD, window=WINDOW_CENTRE):
         self.layers = layers
+        self.launch, self.pad, self.window = launch, pad, window
         first = layers[0][2]
         self.w, self.h, self.res, self.ox, self.oy = first.w, first.h, first.res, first.ox, first.oy
         self.clr = [g.clearance() for _, _, g in layers]
@@ -145,7 +169,7 @@ class World:
 _BIG = 1e9
 
 
-def build_world(obj_path, res=0.05, extra_blocks=(), boulders=True):
+def build_world(obj_path, res=0.05, extra_blocks=(), boulders=True, perturb=None):
     """Layers split wherever the geometry changes height (window edges, boulder tops, wall tops)."""
     groups = load_groups(obj_path)
     marks = {0.0}
@@ -162,9 +186,11 @@ def build_world(obj_path, res=0.05, extra_blocks=(), boulders=True):
     for lo, hi in zip(edges, edges[1:]):
         if hi - lo < 0.01:
             continue
-        grid = build_grid(obj_path, res, z=(lo + hi) / 2, boulders=boulders, extra_blocks=extra_blocks, groups=groups)
+        grid = build_grid(obj_path, res, z=(lo + hi) / 2, boulders=boulders, extra_blocks=extra_blocks,
+                          groups=groups, perturb=perturb)
         layers.append((lo, hi, grid))
-    return World(layers)
+    rot = (perturb or {}).get("rot_deg", 0.0)
+    return World(layers, _rotate(LAUNCH, rot), _rotate(PAD, rot), _rotate(WINDOW_CENTRE, rot))
 
 
 def write_png(filename, width, height, rows):
@@ -205,3 +231,48 @@ def render_png(grid, path, filename, radius, scale=4):
             row += bytes(px) * scale
         rows.extend([bytes([0]) + bytes(row)] * scale)
     write_png(filename, grid.w * scale, grid.h * scale, rows)
+
+
+# ---- changed layouts for the generality test -------------------------------------------------
+LAYOUT_SPECS = [
+    ("walls shifted ~3 cm", dict(jitter=0.03), 0),
+    ("walls shifted ~5 cm", dict(jitter=0.05), 0),
+    ("rotated +2 deg", dict(rot_deg=2.0), 0),
+    ("rotated -2 deg, shifted 2 cm", dict(rot_deg=-2.0, jitter=0.02), 0),
+    ("gaps narrower by 4 cm", dict(grow=0.02), 0),
+    ("gaps narrower by 8 cm", dict(grow=0.04), 0),
+    ("3 extra obstacles", dict(), 3),
+    ("mixed: shift, rotate, narrow, 2 obstacles", dict(jitter=0.03, rot_deg=2.0, grow=0.02), 2),
+]
+
+
+def _boxes(world_for_check, n, seed):
+    """n random 0.3 m boxes away from the start and the pad."""
+    rng = random.Random(seed)
+    out = []
+    while len(out) < n:
+        x, y = rng.uniform(-2.6, 2.6), rng.uniform(-2.6, 2.6)
+        if math.dist((x, y), world_for_check.launch) < 1.0 or math.dist((x, y), world_for_check.pad) < 1.2:
+            continue
+        out.append((x - 0.15, y - 0.15, x + 0.15, y + 0.15))
+    return out
+
+
+def make_layouts(obj_path, radius=0.26, altitude=0.76):
+    """Specs for the changed layouts, keeping only ones that still have a route for the drone.
+    Returns a list of (name, perturb, extra_blocks)."""
+    from theta_star import theta_star
+    out = []
+    for name, perturb, nbox in LAYOUT_SPECS:
+        for attempt in range(40):
+            p = dict(perturb, seed=attempt)
+            w0 = build_world(obj_path, perturb=p)
+            blocks = _boxes(w0, nbox, 1000 + attempt) if nbox else []
+            w = build_world(obj_path, extra_blocks=blocks, perturb=p) if blocks else w0
+            flat = w.union_grid(altitude - 0.095 - 0.15, altitude + 0.03 + 0.15)
+            if theta_star(flat, w.launch, w.pad, radius) is not None:
+                out.append((name, p, blocks))
+                break
+        else:
+            print("no feasible version of layout:", name)
+    return out

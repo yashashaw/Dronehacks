@@ -10,3 +10,6 @@ planner/*_time.txt
 
 # 82 MB CAD assembly: too close to GitHub's 100 MB limit, teammates have it
 sky-beta.step
+
+# the benchmark table is a deliverable, keep it
+!planner/benchmark_results.txt

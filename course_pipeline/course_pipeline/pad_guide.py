@@ -4,7 +4,7 @@
     subscribe  /skybeta/state                   offboard_active, armed, landed
     subscribe  /course/goal                     where the planner wants to go
     subscribe  /pad/detection                   from pad_detector
-    publish    /skybeta/setpoint/pose           ENU position, no yaw
+    publish    /skybeta/setpoint/pose           ENU position; yaw only while following a goal that carries one
 
 The stage logic is in ``guide_machine.py``; this node only moves messages in
 and out. It never talks to /fmu/*, never arms, never changes mode.
@@ -22,7 +22,8 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from std_msgs.msg import String
 
-from course_pipeline.guide_machine import GuideConfig, GuideMachine
+from course_pipeline.guide_machine import GuideConfig, GuideMachine, Stage
+from course_pipeline.pad_math import is_fresh, quat_is_zero, quat_to_yaw, yaw_to_quat
 
 
 class PadGuide(Node):
@@ -51,6 +52,8 @@ class PadGuide(Node):
         self.create_subscription(
             String, '/pad/detection', self.detection_cb, 10)
 
+        self.goal_yaw = None       # heading from the planner's goal, or None if it sent none
+        self.goal_yaw_at = None
         self.log_once = set()
         self.create_timer(1.0 / rate_hz, self.tick)
         self.get_logger().info(
@@ -88,6 +91,12 @@ class PadGuide(Node):
     def goal_cb(self, msg):
         p = msg.pose.position
         self.machine.on_goal((p.x, p.y, p.z), self.now_s())
+        q = msg.pose.orientation
+        if quat_is_zero(q.x, q.y, q.z, q.w):
+            self.goal_yaw = None   # all-zero quaternion: the planner gave no heading
+        else:
+            self.goal_yaw = quat_to_yaw(q.x, q.y, q.z, q.w)
+            self.goal_yaw_at = self.now_s()
 
     def detection_cb(self, msg):
         try:
@@ -99,14 +108,19 @@ class PadGuide(Node):
             detection.get('position_enu'), self.now_s())
 
     # -- output ----------------------------------------------------------
-    def send(self, x, y, z):
+    def send(self, x, y, z, yaw=None):
         msg = PoseStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'odom'
         msg.pose.position.x = float(x)
         msg.pose.position.y = float(y)
         msg.pose.position.z = float(z)
-        msg.pose.orientation.w = 0.0   # all-zero quaternion: do not command yaw
+        if yaw is None:
+            msg.pose.orientation.w = 0.0   # all-zero quaternion: do not command yaw
+        else:
+            qx, qy, qz, qw = yaw_to_quat(yaw)
+            msg.pose.orientation.x, msg.pose.orientation.y = qx, qy
+            msg.pose.orientation.z, msg.pose.orientation.w = qz, qw
         self.setpoint_pub.publish(msg)
 
     def tick(self):
@@ -122,7 +136,11 @@ class PadGuide(Node):
                 'no /visual_slam/tracking/odometry yet -- is cuVSLAM tracking? '
                 'Nothing will be commanded until it is.')
             return
-        self.send(*target)
+        yaw = None
+        if (self.machine.stage is Stage.FOLLOW and self.goal_yaw is not None
+                and is_fresh(self.goal_yaw_at, self.now_s(), self.machine.cfg.goal_timeout_s)):
+            yaw = self.goal_yaw   # the camera has to face the way the planner is steering
+        self.send(*target, yaw=yaw)
 
 
 def main(args=None):

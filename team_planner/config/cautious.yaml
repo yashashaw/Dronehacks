@@ -1,0 +1,12 @@
+# First slow runs: conservative speed, A* route finder, planner altitude shared with the guide.
+# Set cruise_altitude_m on course_pipeline to the SAME number (see README, "One altitude").
+team_planner:
+  ros__parameters:
+    route_planner: astar        # astar | theta | astar_smooth
+    v_max: 0.5                  # m/s. Raise only after clean slow runs.
+    flight_altitude_m: 0.7      # goal height above the odometry origin
+    camera_start_height_m: 0.10 # MEASURE: lens height above the floor on the launch mark
+    goal_lookahead_s: 1.0
+    goal_max_m: 1.0
+    depth_decimation: 2
+    max_ekf_gap_m: 0.5

@@ -5,6 +5,7 @@ in the estimate's frame. Nothing here knows the course: goals are frontiers (the
 known free space) or the landing pad once it has been seen, and the map grows as needed.
 """
 import math
+import time
 from collections import deque
 from dataclasses import dataclass
 
@@ -51,6 +52,7 @@ class NavParams:
     margin_max: float = 0.12
     margin_decay_s: float = 15.0
     ban_s: float = 30.0            # do not retry a goal that got the drone stuck for this long
+    planner: str = "theta"         # route finder: theta | astar | astar_smooth | rrt_smooth (benchmarking)
 
 
 class Navigator:
@@ -77,6 +79,8 @@ class Navigator:
         self.recover_dir = (0.0, 0.0)
         self.stuck_events = 0
         self._radius_override = None
+        self.plan_calls = 0
+        self.plan_time = 0.0
 
     @property
     def radius(self):
@@ -94,6 +98,15 @@ class Navigator:
         else:  # running mean damps single-frame noise
             k = 1 / min(self.pad_hits + 1, 10)
             self.pad = (self.pad[0] + k * (px - self.pad[0]), self.pad[1] + k * (py - self.pad[1]))
+        self.pad_hits += 1
+
+    def set_pad_world(self, x, y):
+        """Pad position handed over already in the estimate frame (a detector that unprojects)."""
+        if self.pad is None:
+            self.pad = (x, y)
+        else:
+            k = 1 / min(self.pad_hits + 1, 10)
+            self.pad = (self.pad[0] + k * (x - self.pad[0]), self.pad[1] + k * (y - self.pad[1]))
         self.pad_hits += 1
 
     def _mark_visited(self, x, y, r=0.4):
@@ -169,6 +182,13 @@ class Navigator:
             return 0.0
         return float(self.mapper.visited[py[ok] * g.w + px[ok]].mean())
 
+    def _route(self, start, goal):
+        t0 = time.perf_counter()
+        res = theta_star(self.grid, start, goal, self.radius, mode=self.p.planner)
+        self.plan_time += time.perf_counter() - t0
+        self.plan_calls += 1
+        return res
+
     def _start(self, x, y):
         return (x, y) if self._ok(self.grid.to_cell(x, y)) else self._nearest_ok((x, y), 0.5)
 
@@ -197,7 +217,7 @@ class Navigator:
         if self.pad is not None:
             goal = self._nearest_ok(self.pad, 1.0)
             if goal is not None:
-                res = theta_star(self.grid, start, goal, self.radius)
+                res = self._route(start, goal)
                 if res:
                     self.path, self.goal, self.status = res[0], goal, "to_pad"
                     self.target = res[0][-1]
@@ -209,7 +229,7 @@ class Navigator:
         cands = far or cands
         for cell, size in cands[:p.max_candidates]:
             pt = self.grid.to_world(*cell)
-            res = theta_star(self.grid, start, pt, self.radius)
+            res = self._route(start, pt)
             if not res:
                 continue
             path, cost = res
@@ -230,7 +250,7 @@ class Navigator:
         """Keep the current frontier goal, refresh the route to it as the map changes."""
         x, y, _ = pose
         start = self._start(x, y)
-        res = theta_star(self.grid, start, self.goal, self.radius) if start else None
+        res = self._route(start, self.goal) if start else None
         if res:
             self._commit(res[0], self.goal)
         else:

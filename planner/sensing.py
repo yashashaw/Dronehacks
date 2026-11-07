@@ -16,7 +16,7 @@ from theta_star import OCC
 class SensorParams:
     hfov_deg: float = 78.4         # from the drone's CameraInfo: fx = 627 px on a 1024 px wide image
     n_rays: int = 48               # depth image collapsed to one horizontal scan at flight height
-    min_range: float = 0.50        # f*B/95 disparities at 1024x640; about 0.25 with extended disparity
+    min_range: float = 0.40        # depth.mp4: valid down to 0.42 m (arithmetic said 0.50 m without extended disparity)
     max_range: float = 5.0         # usable range; error grows with the square of distance
     focal_px: float = 627.0
     baseline: float = 0.0754

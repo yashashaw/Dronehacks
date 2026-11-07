@@ -49,13 +49,25 @@ def true_rectangle(corners, length, width):
     return [c0, p1, p2, p3, c0]
 
 
-def build(run, obj):
+def build(run, obj, lm_radius=6.0):
     rows = aw.load_odom(run)
     dwells = aw.find_dwells(rows)
     step = max(1, len(rows) // 1500)
     path = [[r['x'], r['y'], r['z']] for r in rows[::step]]
     marks = [list(d['pos']) for d in dwells]
-    data = {'path': path, 'marks': marks, 'traced': None, 'true': None, 'title': os.path.basename(run)}
+    data = {'path': path, 'marks': marks, 'traced': None, 'true': None, 'title': os.path.basename(run),
+            'slam': None, 'lm': None}
+    sp = os.path.join(run, 'slam_odom.csv')
+    if os.path.exists(sp):
+        import csv
+        srows = list(csv.DictReader(open(sp)))
+        data['slam'] = [[float(r['x']), float(r['y']), float(r['z'])] for r in srows[::max(1, len(srows) // 1500)]]
+    lp = os.path.join(run, 'landmarks.csv')
+    if os.path.exists(lp):
+        pts = [tuple(map(float, l.split(','))) for l in open(lp) if l[0] not in '#x' and l.strip()]
+        near = [q for q in pts if min(math.dist(q, c) for c in path[::20]) <= lm_radius]
+        data['lm'] = [[round(v, 3) for v in q] for q in near[::max(1, len(near) // 6000)]]
+        data['lm_info'] = f'{len(near)} of {len(pts)} landmarks within {lm_radius} m of the path'
     if obj and len(marks) >= 4:
         c = marks[:4]
         data['traced'] = c + [c[0]]
@@ -75,7 +87,7 @@ b{color:#fff}</style><div id=t></div><canvas id=c></canvas>
 const D=__DATA__;
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 let yaw=-0.7,pitch=0.5,zoom=1,px=0,py=0,drag=null;
-const all=[].concat(D.path,D.marks,D.traced||[],D.true||[]);
+const all=[].concat(D.path,D.marks,D.traced||[],D.true||[],D.slam||[]);
 const mn=[0,1,2].map(i=>Math.min(...all.map(p=>p[i]))),mx=[0,1,2].map(i=>Math.max(...all.map(p=>p[i])));
 const ctr=mn.map((v,i)=>(v+mx[i])/2),span=Math.max(...mn.map((v,i)=>mx[i]-v),0.3);
 function P(p){let x=p[0]-ctr[0],y=p[1]-ctr[1],z=p[2]-ctr[2];
@@ -90,12 +102,14 @@ function draw(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devic
  const f=span/4,o=[ctr[0]-span/2,ctr[1]-span/2,mn[2]];
  for(let i=0;i<=4;i++){line([[o[0]+i*f,o[1],o[2]],[o[0]+i*f,o[1]+span,o[2]]],'#262b36',1);line([[o[0],o[1]+i*f,o[2]],[o[0]+span,o[1]+i*f,o[2]]],'#262b36',1)}
  line([[o[0],o[1],o[2]],[o[0]+f,o[1],o[2]]],'#e5534b',3);line([[o[0],o[1],o[2]],[o[0],o[1]+f,o[2]]],'#57ab5a',3);line([[o[0],o[1],o[2]],[o[0],o[1],o[2]+f]],'#539bf5',3);
+ if(D.lm){g.fillStyle='rgba(120,170,255,0.55)';D.lm.forEach(p=>{const q=P(p);g.fillRect(q[0],q[1],2*devicePixelRatio,2*devicePixelRatio)})}
+ if(D.slam)line(D.slam,'#bc8cff',2*devicePixelRatio);
  line(D.path,'#6e7681',1.5*devicePixelRatio);
  if(D.true)line(D.true,'#57ab5a',2.5*devicePixelRatio,[10,6]);
  if(D.traced)line(D.traced,'#f0883e',3*devicePixelRatio);
  D.marks.forEach((m,i)=>dot(m,'#f0883e',5*devicePixelRatio,String(i+1)));
- const L=[`<b>${D.title}</b>`,'grey: VIO path  orange: traced corners'+(D.true?'  green dashed: your true rectangle':''),
-  `axes (red x, green y, blue z up), grid cell = ${f.toFixed(2)} m`];if(D.text)L.push(D.text);
+ const L=[`<b>${D.title}</b>`,'grey: VIO path'+(D.slam?'  purple: SLAM path':'')+(D.lm?'  blue dots: SLAM landmarks':'')+(D.marks.length?'  orange: holds':'')+(D.true?'  green dashed: true rectangle':''),
+  `axes (red x, green y, blue z up), grid cell = ${f.toFixed(2)} m`];if(D.text)L.push(D.text);if(D.lm_info)L.push(D.lm_info);
  document.getElementById('t').innerHTML=L.join('<br>');}
 cv.onmousedown=e=>drag=[e.clientX,e.clientY,e.shiftKey];onmouseup=()=>drag=null;
 onmousemove=e=>{if(!drag)return;const dx=e.clientX-drag[0],dy=e.clientY-drag[1];drag[0]=e.clientX;drag[1]=e.clientY;
@@ -108,9 +122,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('run')
     ap.add_argument('--object', help='"LENGTH,WIDTH" metres')
+    ap.add_argument('--lm-radius', type=float, default=6.0, help='drop landmarks farther than this from the path')
     a, _ = ap.parse_known_args()   # tolerate analyze_walk-only flags such as --skip
     obj = tuple(float(v) for v in a.object.split(',')) if a.object else None
-    data = build(a.run, obj)
+    data = build(a.run, obj, a.lm_radius)
     out = os.path.join(a.run, 'map.html')
     with open(out, 'w') as f:
         f.write(PAGE.replace('__DATA__', json.dumps(data)))

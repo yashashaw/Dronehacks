@@ -28,6 +28,11 @@ try:
     from isaac_ros_visual_slam_interfaces.msg import VisualSlamStatus
 except ImportError:
     VisualSlamStatus = None
+from sensor_msgs.msg import PointCloud2
+try:
+    from sensor_msgs_py import point_cloud2
+except ImportError:
+    point_cloud2 = None
 try:
     from px4_msgs.msg import VehicleLocalPosition
 except ImportError:
@@ -40,7 +45,7 @@ ODOM_COLS = ['recv_s', 'stamp_s', 'x', 'y', 'z', 'qx', 'qy', 'qz', 'qw', 'vx', '
 
 
 class Logger(Node):
-    def __init__(self, out, odom_topic, status_topic, lpos_topic):
+    def __init__(self, out, odom_topic, status_topic, lpos_topic, slam_topic=None, lm_topic=None):
         super().__init__('walk_logger')
         os.makedirs(out, exist_ok=True)
         self.t0 = time.monotonic()
@@ -53,7 +58,18 @@ class Logger(Node):
         self.f_lpos = None
         self.out = out
         self.last_state = None
-        self.n_odom = self.n_lpos = 0
+        self.n_odom = self.n_lpos = self.n_slam = 0
+        self.f_slam = self.w_slam = None
+        self.lm_cloud = None      # latest landmark cloud, written once at the end
+        self.lm_frame = ''
+        self.n_lm = 0
+        if slam_topic:
+            self.f_slam = open(os.path.join(out, 'slam_odom.csv'), 'w', newline='')
+            self.w_slam = csv.writer(self.f_slam)
+            self.w_slam.writerow(['recv_s', 'stamp_s', 'x', 'y', 'z', 'frame'])
+            self.create_subscription(Odometry, slam_topic, self.on_slam, qos_profile_sensor_data)
+        if lm_topic and point_cloud2 is not None:
+            self.create_subscription(PointCloud2, lm_topic, self.on_lm, qos_profile_sensor_data)
         self.create_subscription(Odometry, odom_topic, self.on_odom, qos_profile_sensor_data)
         if VisualSlamStatus is not None:
             self.create_subscription(VisualSlamStatus, status_topic, self.on_status,
@@ -71,6 +87,20 @@ class Logger(Node):
                               p.x, p.y, p.z, q.x, q.y, q.z, q.w, v.x, v.y, v.z])
         self.n_odom += 1
 
+    def on_slam(self, m):
+        p, s = m.pose.pose.position, m.header.stamp
+        self.w_slam.writerow([f'{self.rel():.4f}', f'{s.sec + s.nanosec * 1e-9:.6f}',
+                              p.x, p.y, p.z, m.header.frame_id])
+        self.n_slam += 1
+
+    def on_lm(self, m):
+        self.n_lm += 1
+        pts = [(float(x), float(y), float(z)) for x, y, z in
+               point_cloud2.read_points(m, field_names=('x', 'y', 'z'), skip_nans=True)]
+        if pts:                      # keep the biggest-so-far snapshot, it is the fullest map
+            if self.lm_cloud is None or len(pts) >= len(self.lm_cloud):
+                self.lm_cloud, self.lm_frame = pts, m.header.frame_id
+
     def on_status(self, m):
         if m.vo_state != self.last_state:  # state changes only
             self.last_state = m.vo_state
@@ -87,7 +117,11 @@ class Logger(Node):
         self.n_lpos += 1
 
     def close(self):
-        for f in (self.f_odom, self.f_status, self.f_lpos):
+        if self.lm_cloud:
+            with open(os.path.join(self.out, 'landmarks.csv'), 'w', newline='') as f:
+                f.write('# frame_id=' + self.lm_frame + chr(10) + 'x,y,z' + chr(10))
+                csv.writer(f).writerows(self.lm_cloud)
+        for f in (self.f_odom, self.f_status, self.f_lpos, self.f_slam):
             if f:
                 f.close()
 
@@ -99,10 +133,12 @@ def main():
     ap.add_argument('--odom', default='/visual_slam/tracking/odometry')
     ap.add_argument('--status', default='/visual_slam/status')
     ap.add_argument('--lpos', default='/fmu/out/vehicle_local_position')
+    ap.add_argument('--slam-odom', default=None, help='e.g. /visual_slam/vis/slam_odometry')
+    ap.add_argument('--landmarks', default=None, help='e.g. /visual_slam/vis/landmarks_cloud')
     a = ap.parse_args()
 
     rclpy.init()
-    node = Logger(a.out, a.odom, a.status, a.lpos)
+    node = Logger(a.out, a.odom, a.status, a.lpos, a.slam_odom, a.landmarks)
     end = time.monotonic() + a.seconds
     try:
         while time.monotonic() < end:
@@ -110,7 +146,8 @@ def main():
     finally:
         node.close()
         summary = (f'{a.seconds:.0f} s: {node.n_odom} odom ({node.n_odom / a.seconds:.1f} Hz), '
-                   f'{node.n_lpos} lpos\n')
+                   f'{node.n_lpos} lpos, {node.n_slam} slam odom, {node.n_lm} landmark clouds '
+                   f'({len(node.lm_cloud or [])} pts in the fullest)\n')
         with open(os.path.join(a.out, 'DONE'), 'w') as f:
             f.write(summary)
         print(summary, end='')

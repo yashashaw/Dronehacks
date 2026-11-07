@@ -1,0 +1,33 @@
+# Drone 7: EKF2 external-vision fusion (position + yaw from the camera SLAM), nothing else.
+#
+# Based on skybeta/px4/params/03b_ekf2_vision.params (same keys, same values) with ONE change:
+# EKF2_EV_DELAY is set from drone 7's own measurement (loc_stack/facts/drone7/SUMMARY.md).
+#
+# LOAD ONLY AFTER the organizers have said EKF2 changes are allowed. Load in QGroundControl
+# (Parameters > Tools > Load from file), then REBOOT the flight controller.
+#
+# Deliberately NOT in this file: EKF2_HGT_REF / EKF2_BARO_CTRL / EKF2_RNG_CTRL (height stays on the
+# rangefinder + barometer, 03a), EKF2_MAG_TYPE, EKF2_GPS_CTRL, and every failsafe, kill-switch,
+# geofence and battery parameter.
+#
+# EKF2_EV_DELAY: image-header-stamp to bridge-publish, p50 of a 40 s probe with the final
+# position-only setup (IMU fusion on, mapping off, depth off), run alone: 105 ms, p95 324 ms.
+# The same probe measured p50 58, 61, 78 and 105 ms on different starts today, so this value is
+# the least certain one here. Re-check it on the vehicle with the EKF2 replay method
+# (SDLOG_PROFILE bit 7) and change it if the innovations say so. It excludes the ~1-2 ms
+# serial hop to the flight controller.
+#
+# After loading + reboot, with the stack running, `walk_logger.py` records ekf_flags.csv. Success is
+# cs_ev_pos = 1 and cs_ev_yaw = 1 and xy_valid = 1. If cs_ev_pos stays 0, EKF2 is rejecting or
+# not receiving the vision data.
+#
+# Vehicle-Id	Component-Id	Name	Value	Type
+1	1	EKF2_EV_CTRL	9	6
+1	1	EKF2_EV_DELAY	105.000000	9
+1	1	EKF2_EV_NOISE_MD	0	6
+1	1	EKF2_EVP_NOISE	0.100000	9
+1	1	EKF2_EVV_NOISE	0.100000	9
+1	1	EKF2_EVA_NOISE	0.050000	9
+1	1	EKF2_EV_POS_X	0.000000	9
+1	1	EKF2_EV_POS_Y	0.000000	9
+1	1	EKF2_EV_POS_Z	0.000000	9

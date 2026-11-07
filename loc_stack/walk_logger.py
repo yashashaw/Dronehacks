@@ -34,9 +34,9 @@ try:
 except ImportError:
     point_cloud2 = None
 try:
-    from px4_msgs.msg import VehicleLocalPosition
+    from px4_msgs.msg import EstimatorStatusFlags, VehicleLocalPosition
 except ImportError:
-    VehicleLocalPosition = None
+    EstimatorStatusFlags = VehicleLocalPosition = None
 
 PX4_QOS = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
                      durability=DurabilityPolicy.VOLATILE,
@@ -74,8 +74,12 @@ class Logger(Node):
         if VisualSlamStatus is not None:
             self.create_subscription(VisualSlamStatus, status_topic, self.on_status,
                                      qos_profile_sensor_data)
+        self.f_flags = self.w_flags = None
+        self.last_flags_t = -1.0
         if VehicleLocalPosition is not None:
             self.create_subscription(VehicleLocalPosition, lpos_topic, self.on_lpos, PX4_QOS)
+            self.create_subscription(EstimatorStatusFlags, '/fmu/out/estimator_status_flags',
+                                     self.on_flags, PX4_QOS)
 
     def rel(self):
         return time.monotonic() - self.t0
@@ -110,18 +114,35 @@ class Logger(Node):
         if self.f_lpos is None:
             self.f_lpos = open(os.path.join(self.out, 'lpos.csv'), 'w', newline='')
             self.w_lpos = csv.writer(self.f_lpos)
-            self.w_lpos.writerow(['recv_s', 'x', 'y', 'z', 'xy_valid', 'z_valid',
+            self.w_lpos.writerow(['recv_s', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'heading', 'xy_valid',
+                                  'z_valid', 'v_xy_valid', 'eph', 'epv', 'xy_reset_counter',
                                   'dist_bottom', 'dist_bottom_valid'])
-        self.w_lpos.writerow([f'{self.rel():.4f}', m.x, m.y, m.z, int(m.xy_valid),
-                              int(m.z_valid), m.dist_bottom, int(m.dist_bottom_valid)])
+        self.w_lpos.writerow([f'{self.rel():.4f}', m.x, m.y, m.z, m.vx, m.vy, m.vz, m.heading,
+                              int(m.xy_valid), int(m.z_valid), int(m.v_xy_valid), m.eph, m.epv,
+                              int(m.xy_reset_counter), m.dist_bottom, int(m.dist_bottom_valid)])
         self.n_lpos += 1
+
+    FLAG_COLS = ['cs_ev_pos', 'cs_ev_yaw', 'cs_ev_hgt', 'cs_ev_vel', 'cs_mag', 'cs_baro_hgt',
+                 'cs_rng_hgt', 'cs_tilt_align', 'cs_yaw_align', 'cs_inertial_dead_reckoning',
+                 'reject_hor_pos', 'reject_yaw']
+
+    def on_flags(self, m):
+        t = self.rel()
+        if t - self.last_flags_t < 0.5:        # 2 Hz is plenty for status bits
+            return
+        self.last_flags_t = t
+        if self.f_flags is None:
+            self.f_flags = open(os.path.join(self.out, 'ekf_flags.csv'), 'w', newline='')
+            self.w_flags = csv.writer(self.f_flags)
+            self.w_flags.writerow(['recv_s'] + self.FLAG_COLS)
+        self.w_flags.writerow([f'{t:.3f}'] + [int(getattr(m, c, 0)) for c in self.FLAG_COLS])
 
     def close(self):
         if self.lm_cloud:
             with open(os.path.join(self.out, 'landmarks.csv'), 'w', newline='') as f:
                 f.write('# frame_id=' + self.lm_frame + chr(10) + 'x,y,z' + chr(10))
                 csv.writer(f).writerows(self.lm_cloud)
-        for f in (self.f_odom, self.f_status, self.f_lpos, self.f_slam):
+        for f in (self.f_odom, self.f_status, self.f_lpos, self.f_slam, self.f_flags):
             if f:
                 f.close()
 

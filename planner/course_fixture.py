@@ -8,6 +8,8 @@ import math
 import struct
 import zlib
 
+import numpy as np
+
 from theta_star import FREE, OCC, Grid
 
 NET = 3.048
@@ -82,12 +84,15 @@ def _wall_footprints(verts, z):
     return [_hull(ends[:2] + edges[:2]), _hull(edges[2:] + ends[2:])]
 
 
-def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=()):
+def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=(), groups=None):
     """extra_blocks: (xmin, ymin, xmax, ymax) rectangles to mark occupied, for what-if tests."""
-    groups = load_groups(obj_path)
+    groups = groups or load_groups(obj_path)
     n = int(math.ceil(2 * NET / res))
     grid = Grid(n, n, res, (-NET, -NET))
     for name, verts in groups.items():
+        zs = [v[2] for v in verts]
+        if not min(zs) - 1e-6 <= z <= max(zs) + 1e-6:
+            continue
         if any(word in name for word in WALL_WORDS) and not name.startswith("Net"):
             for poly in _wall_footprints(verts, z):
                 _fill_polygon(grid, poly, res / 2)
@@ -106,6 +111,60 @@ def build_grid(obj_path, res=0.05, z=0.76, boulders=True, extra_blocks=()):
     for x0, y0, x1, y1 in extra_blocks:
         _fill_polygon(grid, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], res / 2)
     return grid
+
+
+class World:
+    """Course as horizontal layers: (z_lo, z_hi, Grid). Within a layer the footprint is constant."""
+
+    def __init__(self, layers):
+        self.layers = layers
+        first = layers[0][2]
+        self.w, self.h, self.res, self.ox, self.oy = first.w, first.h, first.res, first.ox, first.oy
+        self.clr = [g.clearance() for _, _, g in layers]
+
+    def overlapping(self, lo, hi):
+        return [i for i, (a, b, _) in enumerate(self.layers) if b > lo and a < hi]
+
+    def clearance_at(self, pos, lo, hi):
+        """Distance from pos to the nearest obstacle that intersects the height band [lo, hi]."""
+        g = self.layers[0][2]
+        cx, cy = g.to_cell(*pos)
+        if not g.inside(cx, cy):
+            return 0.0
+        return min((self.clr[i][cy * g.w + cx] for i in self.overlapping(lo, hi)), default=_BIG)
+
+    def union_grid(self, lo, hi):
+        out = Grid(self.w, self.h, self.res, (self.ox, self.oy))
+        occ = np.zeros(self.w * self.h, dtype=bool)
+        for i in self.overlapping(lo, hi):
+            occ |= np.frombuffer(self.layers[i][2].cells, dtype=np.uint8) == OCC
+        np.frombuffer(out.cells, dtype=np.uint8)[occ] = OCC
+        return out
+
+
+_BIG = 1e9
+
+
+def build_world(obj_path, res=0.05, extra_blocks=(), boulders=True):
+    """Layers split wherever the geometry changes height (window edges, boulder tops, wall tops)."""
+    groups = load_groups(obj_path)
+    marks = {0.0}
+    for name, verts in groups.items():
+        if name.startswith(("Net", "Floor", "Landing", "Guideline", "Launch", "Approach ring", "Tube cradle")):
+            continue
+        zs = [v[2] for v in verts]
+        if name.startswith("Tube oval") or name.startswith("Boulder"):
+            marks.update((round(max(min(zs), 0.0), 3), round(max(zs), 3)))
+        else:
+            marks.update(round(z, 3) for z in zs)
+    edges = sorted(marks)
+    layers = []
+    for lo, hi in zip(edges, edges[1:]):
+        if hi - lo < 0.01:
+            continue
+        grid = build_grid(obj_path, res, z=(lo + hi) / 2, boulders=boulders, extra_blocks=extra_blocks, groups=groups)
+        layers.append((lo, hi, grid))
+    return World(layers)
 
 
 def write_png(filename, width, height, rows):

@@ -1,11 +1,15 @@
-"""Frontier exploration + Theta* + pure-pursuit follower. Standard library only.
+"""Frontier exploration + Theta* + pure-pursuit follower. Needs numpy and scipy.
 
 Consumes estimated pose, range returns and an optional pad cue; produces a velocity command
 in the estimate's frame. Nothing here knows the course: goals are frontiers (the edge of
-known free space) or the landing pad once it has been seen.
+known free space) or the landing pad once it has been seen, and the map grows as needed.
 """
 import math
+from collections import deque
 from dataclasses import dataclass
+
+import numpy as np
+from scipy.ndimage import label
 
 from mapping import OccupancyMapper
 from theta_star import FREE, UNKNOWN, theta_star
@@ -13,36 +17,72 @@ from theta_star import FREE, UNKNOWN, theta_star
 
 @dataclass
 class NavParams:
-    radius: float = 0.25           # drone half-diagonal 0.23 m + buffer
+    radius: float = 0.26           # prop tips reach 0.25 m sideways (CAD) + buffer; the planner adds one cell more
+    reach: float = 0.25            # how far the airframe extends sideways from the body origin
     v_max: float = 1.0
+    v_min: float = 0.3             # slowest cruise in tight spots
+    slack_gain: float = 3.0        # extra m/s per metre of clearance beyond `reach`
+    curve_window: float = 1.0      # look this far down the path for turns
+    curve_gain: float = 0.6        # how much a 90 degree turn ahead slows the drone
     a_brake: float = 1.5           # speed limit keeps stopping distance inside the seen free range
     stop_margin: float = 0.45
-    lookahead: float = 0.5
-    plan_every: int = 10           # frames (sensor runs at 15 Hz)
+    lookahead_base: float = 0.25   # pure-pursuit lookahead = base + gain * speed
+    lookahead_gain: float = 0.35
+    rate_hz: float = 20.0          # nominal sensor rate, used when no timestamp is given
+    plan_every: int = 10           # frames
     goal_every: int = 30
     w_visit: float = 6.0           # cost of heading for places the trail already covers
-    w_turn: float = 0.5            # cost per radian of turning toward the goal (momentum)
+    w_turn: float = 1.5            # cost per radian of turning toward the goal (momentum)
+    min_goal_dist: float = 0.85    # frontiers closer than this are blind-spot pockets, not openings
     stickiness: float = 0.8        # cost credit for keeping the current frontier
     max_candidates: int = 6
     pad_stop: float = 0.25
-    rep_gain: float = 0.8          # m/s push away from returns closer than rep_dist (0 = off)
+    rep_gain: float = 0.0          # m/s push away from returns closer than rep_dist; OFF: with the 0.5 m depth minimum it never fires at 0.5 m, and at 0.95 m it fights the path in 1 m corridors
     rep_dist: float = 0.5          # centre-to-obstacle distance where the push starts
     rep_min: float = 0.25          # distance at which the push is at full gain
     rep_norm: float = 8.0          # a wall seen by many rays should not push harder
+    standoff: float = 0.0          # stop this far short of unknown space and look first (0 = off); no benefit measured once stuck recovery existed
+    look_frames: int = 30          # after this long the standoff shrinks to zero and it advances
+    stuck_window_s: float = 3.0    # commanding motion but moving less than stuck_disp over this long
+    stuck_disp: float = 0.2
+    recover_s: float = 1.0         # back away this long, then replan
+    recover_speed: float = 0.25
+    margin_step: float = 0.04      # extra planning clearance added after each stuck event
+    margin_max: float = 0.12
+    margin_decay_s: float = 15.0
+    ban_s: float = 30.0            # do not retry a goal that got the drone stuck for this long
 
 
 class Navigator:
-    def __init__(self, width, height, res, origin, params=None):
+    def __init__(self, res=0.05, params=None):
         self.p = params or NavParams()
-        self.mapper = OccupancyMapper(width, height, res, origin)
-        self.grid = self.mapper.grid
-        self.visited = bytearray(width * height)
+        self.mapper = OccupancyMapper(res)
+        self.grid = self.mapper.grid     # same object for the whole run; it grows in place
         self.pad = None                  # (x, y) in the estimate frame
         self.pad_hits = 0
         self.path = []
-        self.goal = None
+        self.goal = None                 # the frontier point being worked toward
+        self.target = None               # where the current path actually ends
+        self.look_goal = None
+        self.look_spent = 0
         self.frame = 0
+        self.t = 0.0
         self.status = "explore"
+        self.last_v = 0.0
+        self.extra_margin = 0.0
+        self.margin_t = 0.0
+        self.hist = deque()              # (t, x, y, commanded speed)
+        self.banned = []                 # (goal, until)
+        self.recover_until = -1.0
+        self.recover_dir = (0.0, 0.0)
+        self.stuck_events = 0
+        self._radius_override = None
+
+    @property
+    def radius(self):
+        if self._radius_override is not None:
+            return self._radius_override
+        return self.p.radius + self.extra_margin
 
     # ---- perception bookkeeping -------------------------------------------------------
     def _see_pad(self, pose, obs):
@@ -58,18 +98,19 @@ class Navigator:
 
     def _mark_visited(self, x, y, r=0.4):
         g = self.grid
-        c = g.to_cell(x, y)
+        cx, cy = g.to_cell(x, y)
         n = int(r / g.res)
-        for dy in range(-n, n + 1):
-            for dx in range(-n, n + 1):
-                if dx * dx + dy * dy <= n * n and g.inside(c[0] + dx, c[1] + dy):
-                    self.visited[(c[1] + dy) * g.w + c[0] + dx] = 1
+        dy, dx = np.mgrid[-n:n + 1, -n:n + 1]
+        keep = dx * dx + dy * dy <= n * n
+        px, py = dx[keep] + cx, dy[keep] + cy
+        ok = (px >= 0) & (px < g.w) & (py >= 0) & (py < g.h)
+        self.mapper.visited[py[ok] * g.w + px[ok]] = 1
 
     # ---- goals --------------------------------------------------------------------------
     def _ok(self, c):
         g = self.grid
         return (g.inside(*c) and g.cells[c[1] * g.w + c[0]] == FREE
-                and g.clearance()[c[1] * g.w + c[0]] >= self.p.radius + g.res)
+                and g.clearance()[c[1] * g.w + c[0]] >= self.radius + g.res)
 
     def _nearest_ok(self, point, rmax):
         g = self.grid
@@ -84,67 +125,91 @@ class Navigator:
                     best = (d, c)
         return None if best is None else g.to_world(*best[1])
 
-    def frontiers(self):
-        """Clusters of reachable free cells that touch unknown space: (cell, size)."""
+    def frontiers(self, start=None):
+        """Clusters of free cells that touch unknown space: (cell, size). With `start` (a world
+        point), only clusters connected to it through traversable cells count, which drops
+        pockets of 'free' space behind walls that stray long-range returns can create."""
         g = self.grid
-        cand = set()
-        for cy in range(1, g.h - 1):
-            row = cy * g.w
-            for cx in range(1, g.w - 1):
-                if g.cells[row + cx] == FREE and (
-                        g.cells[row + cx + 1] == UNKNOWN or g.cells[row + cx - 1] == UNKNOWN
-                        or g.cells[row + g.w + cx] == UNKNOWN or g.cells[row - g.w + cx] == UNKNOWN):
-                    if self._ok((cx, cy)):
-                        cand.add((cx, cy))
+        cells = np.frombuffer(g.cells, dtype=np.uint8).reshape(g.h, g.w)
+        clr = g.clearance().reshape(g.h, g.w)
+        unk = cells == UNKNOWN
+        touches = np.zeros_like(unk)
+        touches[1:-1, 1:-1] = unk[1:-1, 2:] | unk[1:-1, :-2] | unk[2:, 1:-1] | unk[:-2, 1:-1]
+        traversable = (cells == FREE) & (clr >= self.radius + g.res)
+        cand = traversable & touches
+        if start is not None:
+            comp, _ = label(traversable, structure=np.ones((3, 3)))
+            sx, sy = g.to_cell(*start)
+            if not g.inside(sx, sy) or comp[sy, sx] == 0:
+                return []
+            cand &= comp == comp[sy, sx]
+        labels, n = label(cand, structure=np.ones((3, 3)))
+        if n == 0:
+            return []
+        ys, xs = np.nonzero(cand)
+        lab = labels[ys, xs]
         out = []
-        while cand:
-            seed = cand.pop()
-            stack, members = [seed], [seed]
-            while stack:
-                cx, cy = stack.pop()
-                for dx in (-1, 0, 1):
-                    for dy in (-1, 0, 1):
-                        n = (cx + dx, cy + dy)
-                        if n in cand:
-                            cand.remove(n)
-                            stack.append(n)
-                            members.append(n)
-            if len(members) >= 4:
-                mx = sum(m[0] for m in members) / len(members)
-                my = sum(m[1] for m in members) / len(members)
-                out.append((min(members, key=lambda m: (m[0] - mx) ** 2 + (m[1] - my) ** 2), len(members)))
+        for k in range(1, n + 1):
+            m = lab == k
+            if m.sum() < 4:
+                continue
+            kx, ky = xs[m], ys[m]
+            j = np.argmin((kx - kx.mean()) ** 2 + (ky - ky.mean()) ** 2)
+            out.append(((int(kx[j]), int(ky[j])), int(m.sum())))
         return out
 
     def _trail_fraction(self, c, r=0.6):
         g = self.grid
         n = int(r / g.res)
-        tot = hit = 0
-        for dy in range(-n, n + 1, 2):
-            for dx in range(-n, n + 1, 2):
-                if dx * dx + dy * dy <= n * n and g.inside(c[0] + dx, c[1] + dy):
-                    tot += 1
-                    hit += self.visited[(c[1] + dy) * g.w + c[0] + dx]
-        return hit / tot if tot else 0.0
+        dy, dx = np.mgrid[-n:n + 1:2, -n:n + 1:2]
+        keep = dx * dx + dy * dy <= n * n
+        px, py = dx[keep] + c[0], dy[keep] + c[1]
+        ok = (px >= 0) & (px < g.w) & (py >= 0) & (py < g.h)
+        if not ok.any():
+            return 0.0
+        return float(self.mapper.visited[py[ok] * g.w + px[ok]].mean())
+
+    def _start(self, x, y):
+        return (x, y) if self._ok(self.grid.to_cell(x, y)) else self._nearest_ok((x, y), 0.5)
+
+    def _is_banned(self, pt):
+        return any(math.dist(pt, b) < 0.6 and self.t < until for b, until in self.banned)
 
     def _plan(self, pose):
+        """Plan with the extra clearance from recent stuck events; if that leaves no way
+        forward (a gap too tight for the margin), fall back to the base clearance."""
+        self._radius_override = None
+        if self._plan_once(pose) or self.extra_margin <= 0:
+            return
+        self._radius_override = self.p.radius
+        try:
+            self._plan_once(pose)
+        finally:
+            self._radius_override = None
+
+    def _plan_once(self, pose):
         x, y, yaw = pose
         p = self.p
-        start = (x, y) if self._ok(self.grid.to_cell(x, y)) else self._nearest_ok((x, y), 0.5)
+        start = self._start(x, y)
         if start is None:
             self.path, self.status = [], "no_start"
-            return
+            return False
         if self.pad is not None:
             goal = self._nearest_ok(self.pad, 1.0)
             if goal is not None:
-                res = theta_star(self.grid, start, goal, p.radius)
+                res = theta_star(self.grid, start, goal, self.radius)
                 if res:
                     self.path, self.goal, self.status = res[0], goal, "to_pad"
-                    return
+                    self.target = res[0][-1]
+                    return True
         best = None
-        cands = sorted(self.frontiers(), key=lambda f: math.dist(self.grid.to_world(*f[0]), (x, y)))
+        cands = sorted(self.frontiers(start), key=lambda f: math.dist(self.grid.to_world(*f[0]), (x, y)))
+        cands = [f for f in cands if not self._is_banned(self.grid.to_world(*f[0]))]
+        far = [f for f in cands if math.dist(self.grid.to_world(*f[0]), (x, y)) >= p.min_goal_dist]
+        cands = far or cands
         for cell, size in cands[:p.max_candidates]:
             pt = self.grid.to_world(*cell)
-            res = theta_star(self.grid, start, pt, p.radius)
+            res = theta_star(self.grid, start, pt, self.radius)
             if not res:
                 continue
             path, cost = res
@@ -156,36 +221,80 @@ class Navigator:
             if best is None or score < best[0]:
                 best = (score, path, pt)
         if best:
-            self.path, self.goal, self.status = best[1], best[2], "explore"
-        else:
-            self.path, self.goal, self.status = [], None, "no_frontier"
+            self._commit(best[1], best[2])
+            return True
+        self.path, self.goal, self.target, self.status = [], None, None, "no_frontier"
+        return False
 
     def _reroute(self, pose):
         """Keep the current frontier goal, refresh the route to it as the map changes."""
         x, y, _ = pose
-        start = (x, y) if self._ok(self.grid.to_cell(x, y)) else self._nearest_ok((x, y), 0.5)
-        res = theta_star(self.grid, start, self.goal, self.p.radius) if start else None
+        start = self._start(x, y)
+        res = theta_star(self.grid, start, self.goal, self.radius) if start else None
         if res:
-            self.path = res[0]
+            self._commit(res[0], self.goal)
         else:
             self._plan(pose)
 
+    def _commit(self, path, frontier):
+        """Adopt a route to a frontier, but end it `standoff` short of the unknown so the camera
+        sees what is there before the drone arrives. If the drone is already that close it
+        looks at the frontier instead; the longer it has looked, the smaller the standoff."""
+        p = self.p
+        if self.look_goal is None or math.dist(frontier, self.look_goal) > 0.5:
+            self.look_goal, self.look_spent = frontier, 0
+        eff = p.standoff * max(0.0, 1 - self.look_spent / p.look_frames)
+        self.goal = frontier
+        if _length(path) <= eff + 0.15:
+            self.path, self.target, self.status = [], None, "look"
+            self.look_spent += 5
+        else:
+            self.path = _trim(path, eff)
+            self.target, self.status = self.path[-1], "explore"
+
     # ---- control --------------------------------------------------------------------------
     def _carrot(self, x, y):
+        """Point on the path one lookahead ahead of the drone, and the index of the nearest vertex."""
         pts = self.path
         i = min(range(len(pts)), key=lambda k: math.dist(pts[k], (x, y)))
-        remaining = self.p.lookahead
+        remaining = self.p.lookahead_base + self.p.lookahead_gain * self.last_v
         cur = pts[i]
         for nxt in pts[i + 1:]:
             seg = math.dist(cur, nxt)
             if seg >= remaining:
                 t = remaining / seg
-                return cur[0] + (nxt[0] - cur[0]) * t, cur[1] + (nxt[1] - cur[1]) * t
+                return (cur[0] + (nxt[0] - cur[0]) * t, cur[1] + (nxt[1] - cur[1]) * t), i
             remaining -= seg
             cur = nxt
-        return pts[-1]
+        return pts[-1], i
 
-    def _speed(self, heading, yaw, returns, dist_left):
+    def _path_limits(self, i, x, y):
+        """Speed cap from the clearance left along the next stretch of path, and from its turns."""
+        p, g = self.p, self.grid
+        clr = g.clearance()
+        pts = self.path
+        slack, turn, run = 9.0, 0.0, 0.0
+        prev_h = None
+        a = (x, y)
+        for b in pts[i:]:
+            seg = math.dist(a, b)
+            if seg > 1e-6:
+                cx, cy = g.to_cell(*b)
+                if g.inside(cx, cy):
+                    slack = min(slack, clr[cy * g.w + cx] - p.reach)
+                h = math.atan2(b[1] - a[1], b[0] - a[0])
+                if prev_h is not None:
+                    turn += abs((h - prev_h + math.pi) % (2 * math.pi) - math.pi)
+                prev_h = h
+                run += seg
+            a = b
+            if run >= p.curve_window:
+                break
+        v_clear = p.v_min + p.slack_gain * max(0.0, slack)
+        v_curve = p.v_max * (1 - p.curve_gain * min(1.0, turn / (math.pi / 2)))
+        return min(p.v_max, v_clear, max(p.v_min, v_curve))
+
+    def _speed(self, heading, yaw, returns, dist_left, cap):
         p = self.p
         off = abs((heading - yaw + math.pi) % (2 * math.pi) - math.pi)
         if off > math.radians(60):
@@ -194,7 +303,7 @@ class Navigator:
         seen = [r for b, r in returns if abs(b - rel) < math.radians(15)]
         free = min(seen) if seen else 2.0
         v = math.sqrt(2 * p.a_brake * max(0.0, free - p.stop_margin))
-        return min(p.v_max, v, dist_left + 0.1) * math.cos(off)
+        return min(cap, v, dist_left + 0.1) * math.cos(off)
 
     def _repel(self, yaw, returns):
         """Push away from nearby returns. Uses only the current frame in the camera frame,
@@ -220,28 +329,90 @@ class Navigator:
             k *= p.rep_gain / mag
         return px * k, py * k
 
-    def step(self, pose, returns, pad_obs):
+    # ---- getting unstuck ------------------------------------------------------------------
+    def _check_stuck(self, x, y, v_cmd):
+        p = self.p
+        self.hist.append((self.t, x, y, v_cmd))
+        while self.hist and self.t - self.hist[0][0] > p.stuck_window_s:
+            self.hist.popleft()
+        if self.t - self.hist[0][0] < 0.9 * p.stuck_window_s:
+            return False
+        moved = max(math.dist((x, y), (h[1], h[2])) for h in self.hist)
+        pushing = sum(h[3] for h in self.hist) / len(self.hist)
+        return pushing > 0.15 and moved < p.stuck_disp
+
+    def _recover(self, yaw, returns, heading):
+        """Back away from whatever is in the way, plan with more clearance, avoid this goal."""
+        p = self.p
+        self.stuck_events += 1
+        rx, ry = self._repel(yaw, returns)
+        n = math.hypot(rx, ry)
+        self.recover_dir = (rx / n, ry / n) if n > 1e-6 else (-math.cos(heading), -math.sin(heading))
+        self.recover_until = self.t + p.recover_s
+        self.extra_margin = min(p.margin_max, self.extra_margin + p.margin_step)
+        self.margin_t = self.t
+        if self.goal is not None:
+            self.banned.append((self.goal, self.t + p.ban_s))
+        self.path, self.goal, self.target = [], None, None
+        self.hist.clear()
+
+    def step(self, pose, returns, pad_obs, t=None):
         """Returns (vx, vy) in the estimate frame and the yaw to face."""
         x, y, yaw = pose
         self.frame += 1
+        self.t = t if t is not None else self.frame / self.p.rate_hz
         self.mapper.update(pose, returns)
         self._mark_visited(x, y)
         if pad_obs:
             self._see_pad(pose, pad_obs)
-        reached = self.goal is not None and math.dist((x, y), self.goal) < 0.3
+        if self.extra_margin > 0 and self.t - self.margin_t > self.p.margin_decay_s:
+            self.extra_margin = 0.0
+        if self.t < self.recover_until:  # backing away blind for a moment
+            self.last_v = self.p.recover_speed
+            return (self.recover_dir[0] * self.p.recover_speed, self.recover_dir[1] * self.p.recover_speed), yaw
+        reached = self.target is not None and math.dist((x, y), self.target) < 0.3
         if self.path and not reached:
             due, refresh = self.frame % self.p.plan_every == 0, self.status == "explore" and self.frame % self.p.goal_every
         else:
-            due, refresh = self.frame % 5 == 0 or reached, False
+            due, refresh = self.frame % 5 == 0, False
         if due:
             self._reroute(pose) if refresh else self._plan(pose)
         if self.pad is not None and math.dist((x, y), self.pad) < self.p.pad_stop:
             self.status = "landing"
             return (0.0, 0.0), yaw
+        if self.status == "look" and self.goal is not None:  # hold and face the unknown
+            self.last_v = 0.0
+            rx, ry = self._repel(yaw, returns)
+            return (rx, ry), math.atan2(self.goal[1] - y, self.goal[0] - x)
         if not self.path:  # nothing reachable yet: turn in place to look around
+            self.last_v = 0.0
             return (0.0, 0.0), yaw + 1.0
-        tx, ty = self._carrot(x, y)
+        (tx, ty), i = self._carrot(x, y)
         heading = math.atan2(ty - y, tx - x)
-        v = self._speed(heading, yaw, returns, math.dist((x, y), self.path[-1]))
+        cap = self._path_limits(i, x, y)
+        v = self._speed(heading, yaw, returns, math.dist((x, y), self.path[-1]), cap)
+        self.last_v = v
+        if self._check_stuck(x, y, v):
+            self._recover(yaw, returns, heading)
+            return (0.0, 0.0), yaw
         rx, ry = self._repel(yaw, returns)
         return (v * math.cos(heading) + rx, v * math.sin(heading) + ry), heading
+
+
+def _length(path):
+    return sum(math.dist(a, b) for a, b in zip(path, path[1:]))
+
+
+def _trim(path, d):
+    """Cut `d` metres off the end of a path."""
+    pts = list(path)
+    while d > 0 and len(pts) > 1:
+        seg = math.dist(pts[-2], pts[-1])
+        if seg <= d:
+            d -= seg
+            pts.pop()
+        else:
+            t = (seg - d) / seg
+            pts[-1] = (pts[-2][0] + (pts[-1][0] - pts[-2][0]) * t, pts[-2][1] + (pts[-1][1] - pts[-2][1]) * t)
+            d = 0
+    return pts

@@ -7,7 +7,7 @@ of competitor_example. No planner runs.
 """
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -18,8 +18,12 @@ def arg(name, kind):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument('fc_system_id', default_value='1',
-                              description="PX4 MAV_SYS_ID of this drone's FC"),
+        # Default from DRONE_ID (run.sh passes it into the container; the fleet
+        # flasher sets MAV_SYS_ID to it). PX4 ignores commands for another id,
+        # so a default of 1 meant Offboard never engaged on drone 7.
+        DeclareLaunchArgument('fc_system_id',
+                              default_value=EnvironmentVariable('DRONE_ID', default_value='1'),
+                              description="PX4 MAV_SYS_ID of this drone's FC (default: $DRONE_ID)"),
         DeclareLaunchArgument('takeoff_altitude_m', default_value='1.0'),
         DeclareLaunchArgument('hover_s', default_value='1.0',
                               description='seconds at altitude before landing'),

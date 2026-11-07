@@ -19,16 +19,24 @@ E="source skybeta_env.sh >/dev/null 2>&1"
 
 case "${1:-}" in
   hover)   # load the hover flight into the competitor window; the PILOT starts it (arm, then Position)
+    TS=$(date +%Y%m%d-%H%M%S)
+    mkdir -p ~/team_ws/bags ~/team_ws/drone_tests/runs
+    # bag: cameras + IMU + VIO + bridge + every /fmu/out topic, max 10 min (~25 GB), kept in team_ws
+    docker exec -d $C bash -lc "source skybeta_env.sh; record_bag.sh --duration 600 -o /root/team_ws/bags/hover-$TS > /root/team_ws/drone_tests/runs/hover-$TS.bag.log 2>&1"
     docker exec $C tmux respawn-window -k -t skybeta:competitor \
-      "bash -lc 'source skybeta_env.sh; ros2 launch /root/team_ws/drone_tests/hover.launch.py; exec bash'"
+      "bash -lc 'source skybeta_env.sh; ros2 launch /root/team_ws/drone_tests/hover.launch.py 2>&1 | tee /root/team_ws/drone_tests/runs/hover-$TS.log; exec bash'"
     sleep 8
     docker exec $C tmux capture-pane -p -J -t skybeta:competitor | grep -v '^$' | tail -4
-    echo "hover loaded. Pilot: arm on Altitude, then Position. Watch: $0 hoverlog   Undo: $0 restore"
+    echo "hover loaded; recording ~/team_ws/bags/hover-$TS and runs/hover-$TS.log"
+    echo "Pilot: arm on Altitude, then Position. Watch: $0 hoverlog   After landing: $0 restore"
     exit 0 ;;
   hoverlog) docker exec $C tmux capture-pane -p -J -t skybeta:competitor -S -200 | grep -v '^$' | grep -E 'hover_test|python3|LAND|ERROR|WARN' | tail -25; exit 0 ;;
-  restore)
+  restore)   # stop the bag (flushes it), put the normal launch back, sync to disk
+    docker exec $C pkill -INT -f "ros2 bag record" && sleep 5 && echo "bag stopped"
     docker exec $C tmux respawn-window -k -t skybeta:competitor "bash -lc 'source skybeta_env.sh; run_competitor.sh; exec bash'"
-    echo "competitor window back to COMPETITOR_PKG from drone.env"; exit 0 ;;
+    docker exec $C chown -R "$(id -u):$(id -g)" /root/team_ws/bags /root/team_ws/drone_tests/runs 2>/dev/null
+    sync
+    echo "competitor window back to COMPETITOR_PKG from drone.env; files synced to disk"; exit 0 ;;
   log) tr '\r' '\n' < "$LOG" | grep -v '^$' | awk '!/centre/ || NR%5==0'; exit 0 ;;
   motors) shift; ARGS="--spin --props-off --seconds 15 $*" ;;
   pulse)  shift; ARGS="--pulse 0.15 --pulse-seconds 4 --spin --props-off $*" ;;

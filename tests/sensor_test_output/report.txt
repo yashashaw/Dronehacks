@@ -1,0 +1,6 @@
+duration requested : 10.0 s
+/oak/left/image_raw     : 196 frames  (19.6 Hz)
+/oak/imu/data           : 1455 samples (145.5 Hz)
+video               : 1024x640 @ 27.1 fps, 196 frames
+frame<->imu offset  : mean 1.2 ms, max 2.6 ms
+PASS

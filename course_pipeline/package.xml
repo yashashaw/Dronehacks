@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>course_pipeline</name>
+  <version>0.1.0</version>
+  <description>
+    Obstacle-course pipeline for the skybeta drone: a landing-pad detector, a
+    guide that is the only publisher of /skybeta/setpoint/pose, and a
+    placeholder planner that publishes /course/goal until the real pathfinder
+    replaces it. See CONTRACT.md for the topic seam.
+  </description>
+  <maintainer email="team@example.com">DroneHacks team</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf2_ros_py</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>skybeta_flight_interface</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

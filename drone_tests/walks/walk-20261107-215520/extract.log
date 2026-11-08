@@ -1,0 +1,3 @@
+[WARN] [1794118326.263854175] [rosbag2_storage_mcap]: no message indices found, falling back to reading in file order
+messages read: 82567
+DONE

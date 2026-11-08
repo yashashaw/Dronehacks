@@ -1,0 +1,15 @@
+# Second test: 1 m x 1 m box, counter-clockwise, with four 90-degree corners, then land.
+# Start frame: metres from the takeoff point. x = forward (nose at takeoff), y = left, z = up.
+name: test-box
+takeoff_height: 0.8
+speed: 0.3
+corner_speed: 0.2
+max_height: 1.2
+max_cross_track: 0.4
+yaw: fixed
+end: land
+waypoints:
+  - [1.0, 0.0, 0.8]
+  - [1.0, 1.0, 0.8]
+  - [0.0, 1.0, 0.8]
+  - [0.0, 0.0, 0.8]

@@ -11,8 +11,10 @@
 #
 #   ~/team_ws/drone_tests/bg.sh hover        PROPS ON flight: load hover.py (0.7 m, 5 s, land).
 #                                             Nothing flies until the pilot arms + flips to Position.
-#   ~/team_ws/drone_tests/bg.sh hoverlog      what the hover node is saying
-#   ~/team_ws/drone_tests/bg.sh restore       put the normal competitor launch back
+#   ~/team_ws/drone_tests/bg.sh square [S]    same, then a S x S m square (default 0.5, max 1.0), land
+#   ~/team_ws/drone_tests/bg.sh hoverlog      what the hover/square node is saying
+#   ~/team_ws/drone_tests/bg.sh restore       after landing: stop recording, unload (pilot only), sync
+#   ~/team_ws/drone_tests/bg.sh normal        put the boot-default competitor launch back
 #
 # Extra options pass through to depth_motors.py, e.g.  bg.sh motors --farther-faster
 # It checks the drone is disarmed, stops the competitor window (flight_interface), runs the test,
@@ -32,30 +34,35 @@ case "${1:-}" in
     docker exec $C pkill -INT -f "ros2 bag record" && sleep 5; sync
     ls -dt ~/team_ws/bags/capture-* 2>/dev/null | head -1 | xargs -r du -sh
     exit 0 ;;
-  hover)   # load the hover flight into the competitor window; the PILOT starts it (arm, then Position)
+  hover|square)   # load the flight into the competitor window; the PILOT starts it (arm, then Position)
+    if [[ "$1" == square ]]; then SQ="${2:-0.5}"; NAME=square; else SQ=0.0; NAME=hover; fi
     TS=$(date +%Y%m%d-%H%M%S)
     mkdir -p ~/team_ws/bags ~/team_ws/drone_tests/runs
+    docker exec $C pkill -INT -f "ros2 bag record" 2>/dev/null && sleep 3   # one bag at a time
     # bag: cameras + IMU + VIO + bridge + every /fmu/out topic, max 10 min (~25 GB), kept in team_ws
-    docker exec -d $C bash -lc "source skybeta_env.sh; record_bag.sh --duration 600 -o /root/team_ws/bags/hover-$TS > /root/team_ws/drone_tests/runs/hover-$TS.bag.log 2>&1"
+    docker exec -d $C bash -lc "source skybeta_env.sh; record_bag.sh --duration 600 -o /root/team_ws/bags/$NAME-$TS > /root/team_ws/drone_tests/runs/$NAME-$TS.bag.log 2>&1"
     docker exec $C tmux respawn-window -k -t skybeta:competitor \
-      "bash -lc 'source skybeta_env.sh; ros2 launch /root/team_ws/drone_tests/hover.launch.py 2>&1 | tee /root/team_ws/drone_tests/runs/hover-$TS.log; exec bash'"
+      "bash -lc 'source skybeta_env.sh; ros2 launch /root/team_ws/drone_tests/hover.launch.py square:=$SQ 2>&1 | tee /root/team_ws/drone_tests/runs/$NAME-$TS.log; exec bash'"
     sleep 8
     docker exec $C tmux capture-pane -p -J -t skybeta:competitor | grep -v '^$' | tail -4
-    echo "hover loaded; recording ~/team_ws/bags/hover-$TS and runs/hover-$TS.log"
+    echo "$NAME loaded (square side $SQ m); recording ~/team_ws/bags/$NAME-$TS and runs/$NAME-$TS.log"
     echo "Pilot: arm on Altitude, then Position. Watch: $0 hoverlog   After landing: $0 restore"
     exit 0 ;;
   hoverlog) docker exec $C tmux capture-pane -p -J -t skybeta:competitor -S -200 | grep -v '^$' | grep -E 'hover_test|python3|LAND|ERROR|WARN' | tail -25; exit 0 ;;
-  restore)   # stop the bag (flushes it), put the normal launch back, sync to disk
+  restore)   # stop the bag (flushes it), leave NO mission loaded (arming + Position = pilot only), sync
     docker exec $C pkill -INT -f "ros2 bag record" && sleep 5 && echo "bag stopped"
-    docker exec $C tmux respawn-window -k -t skybeta:competitor "bash -lc 'source skybeta_env.sh; run_competitor.sh; exec bash'"
+    docker exec $C tmux respawn-window -k -t skybeta:competitor "bash -c 'echo [dt] no mission loaded: Position stays with the pilot; exec bash'"
     docker exec $C chown -R "$(id -u):$(id -g)" /root/team_ws/bags /root/team_ws/drone_tests/runs 2>/dev/null
     sync
-    echo "competitor window back to COMPETITOR_PKG from drone.env; files synced to disk"; exit 0 ;;
+    echo "no mission loaded (pilot only); files synced to disk. Default launch back: $0 normal"; exit 0 ;;
+  normal)    # the boot default: COMPETITOR_PKG from drone.env (now: competitor_example, NOT anchored)
+    docker exec $C tmux respawn-window -k -t skybeta:competitor "bash -lc 'source skybeta_env.sh; run_competitor.sh; exec bash'"
+    echo "competitor window back to COMPETITOR_PKG from drone.env"; exit 0 ;;
   log) tr '\r' '\n' < "$LOG" | grep -v '^$' | awk '!/centre/ || NR%5==0'; exit 0 ;;
   motors) shift; ARGS="--spin --props-off --seconds 15 $*" ;;
   pulse)  shift; ARGS="--pulse 0.15 --pulse-seconds 4 --spin --props-off $*" ;;
   run)    shift; ARGS="$*" ;;   # internal: the detached part
-  *) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
 
 if [[ "${BG_CHILD:-}" != 1 ]]; then

@@ -37,15 +37,23 @@ ARRIVED_M = 0.15     # height error that counts as "at height"
 GATE_M = 0.3         # max |VIO height - PX4 height| on the ground before we allow a takeover
 RANGE_MAX = min(ALT + 0.5, 2.0)   # rangefinder ceiling -> LAND
 DISAGREE_M = 0.4     # max |VIO climb - rangefinder climb| in the air -> LAND
-MAX_FLIGHT_S = 30.0  # LAND after this long in Offboard, whatever happens
+MAX_FLIGHT_S = 30.0  # LAND after this long in Offboard, whatever happens (60 s with --square)
+CORNER_M = 0.15      # horizontal distance that counts as "at the corner"
+CORNER_TIMEOUT_S = 12.0
 
 PX4_QOS = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE,
                      history=HistoryPolicy.KEEP_LAST, depth=1)
 
 
 class Hover(Node):
-    def __init__(self):
+    def __init__(self, square_m=0.0):
         super().__init__('hover_test')
+        # --square S: after the hover, fly a S x S square (forward, left, back, right: VIO axes
+        # at stack start), back to the start, then land.
+        self.square = [(square_m, 0.0), (square_m, square_m), (0.0, square_m), (0.0, 0.0)] if square_m > 0 else []
+        self.corner = 0
+        self.t_corner = None
+        self.max_flight_s = 60.0 if self.square else MAX_FLIGHT_S
         self.pub = self.create_publisher(PoseStamped, '/skybeta/setpoint/pose', 10)
         self.cmd = self.create_publisher(VehicleCommand, '/fmu/in/vehicle_command', PX4_QOS)
         self.create_subscription(Odometry, '/visual_slam/tracking/odometry', self.on_odom, 10)
@@ -132,16 +140,16 @@ class Hover(Node):
                          every=5.0)
                 return
 
-        if self.phase in ('CLIMB', 'HOVER') and not offboard:
+        if self.phase in ('CLIMB', 'HOVER', 'SQUARE') and not offboard:
             self.get_logger().warn('Offboard ended: the pilot has it. Not commanding anything more.')
             self.phase = 'DONE'
             return
 
-        if self.phase in ('CLIMB', 'HOVER'):
+        if self.phase in ('CLIMB', 'HOVER', 'SQUARE'):
             rng = self.range_m()
             climb_vio = vio_h - self.start[2]
-            if time.monotonic() - self.t_offboard > MAX_FLIGHT_S:
-                self.land(f'{MAX_FLIGHT_S:.0f} s in Offboard')
+            if time.monotonic() - self.t_offboard > self.max_flight_s:
+                self.land(f'{self.max_flight_s:.0f} s in Offboard')
             elif rng is not None and rng > RANGE_MAX:
                 self.land(f'rangefinder {rng:.2f} m > {RANGE_MAX:.2f} m')
             elif rng is not None and rng > 0.3 and abs(climb_vio - (rng - self.range0)) > DISAGREE_M:
@@ -156,7 +164,24 @@ class Hover(Node):
         elif self.phase == 'HOVER':
             self.send((self.start[0], self.start[1], self.start[2] + ALT))
             if time.monotonic() - self.t_hover >= HOVER_S:
-                self.land('hover done')
+                if self.square:
+                    self.phase, self.t_corner = 'SQUARE', time.monotonic()
+                    self.get_logger().info(f'hover done: square, corner 1 {self.square[0]}')
+                else:
+                    self.land('hover done')
+        elif self.phase == 'SQUARE':
+            dx, dy = self.square[self.corner]
+            target = (self.start[0] + dx, self.start[1] + dy, self.start[2] + ALT)
+            self.send(target)
+            if math.dist(self.vio[:2], target[:2]) < CORNER_M:
+                self.corner += 1
+                self.t_corner = time.monotonic()
+                if self.corner == len(self.square):
+                    self.land('square done')
+                else:
+                    self.get_logger().info(f'corner {self.corner + 1} {self.square[self.corner]}')
+            elif time.monotonic() - self.t_corner > CORNER_TIMEOUT_S:
+                self.land(f'corner {self.corner + 1} not reached in {CORNER_TIMEOUT_S:.0f} s')
         elif self.phase == 'LAND':
             self.land('')        # resend a few times; PX4 leaves Offboard into Land
             if self.state.get('landed') and not self.state.get('armed'):
@@ -169,8 +194,14 @@ class Hover(Node):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--square', type=float, default=0.0, help='side in m (0 = hover only, max 1.0)')
+    a, _ = ap.parse_known_args()
+    if not 0.0 <= a.square <= 1.0:
+        raise SystemExit('--square must be 0..1.0 m')
     rclpy.init()
-    n = Hover()
+    n = Hover(a.square)
     try:
         rclpy.spin(n)
     except KeyboardInterrupt:

@@ -20,5 +20,5 @@ end: land
 waypoints:                 # avoids the LADDER over the straight pad -> X line (2026-11-08)
   - [-3.86, -2.00, 2.30]   # along the pad -> waypoint 8 line to 2.0 m right of the X
   - [0.00, -2.00, 2.30]    # straight forward along the 2.0 m-right line, level with the X
-  - [0.00, 0.00, 2.30]     # straight across to above the X
-  - [0.00, 0.00, 0.60]     # down over the X, then land
+  - [0.00, -0.15, 2.30]    # straight across to 15 cm RIGHT of the X (away from the net)
+  - [0.00, -0.15, 0.60]    # down there, then land (still well inside the 0.61 m landing limit)

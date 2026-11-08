@@ -157,7 +157,7 @@ def test_return_loads_relative_to_the_route_file():
 def test_course_return_route_is_valid_and_high():
     r = load_route(os.path.join(ROUTES, 'return_to_x.yaml'))
     assert r.cfg['takeoff_height'] >= 2.0 and r.cfg['max_height'] <= 2.6
-    assert r.points[-1][:2] == (0.0, 0.0)                 # ends over the X
+    assert math.hypot(*r.points[-1][:2]) < 0.61 - 0.2     # ends near the X (rule 7.10: within 2 ft), with drift margin
 
 
 def test_return_route_problems_refuse(tmp_path):

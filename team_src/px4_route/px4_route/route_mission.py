@@ -40,8 +40,11 @@ from px4_msgs.msg import VehicleLocalPosition
 from px4_route.route import Carrot, Path, RouteError, load_route, start_frame_to_enu
 
 RELAY_TOPIC = '/px4_route/odom'
-RELAY_Z_MAX_M = 0.1      # relay (= flight_interface's altitude origin) starts only within this of 0
-RELAY_STEADY_S = 1.0     # ... continuously for this long
+RELAY_Z_MAX_M = 0.25     # relay (= flight_interface's altitude origin) starts only within this of 0
+RELAY_STEADY_S = 2.0     # ... and only once PX4's height has been steady for this long
+RELAY_STEADY_M = 0.03    # (max - min over RELAY_STEADY_S). On drone 18 PX4 rests at a steady
+                         # +0.13 m on the floor (fine), but drifts 0.5-1.4 m -> 0 for ~30 s after
+                         # boot or after being carried (not fine): that drift is what this catches.
 PX4_QOS = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE,
                      history=HistoryPolicy.KEEP_LAST, depth=1)
 
@@ -98,7 +101,7 @@ class RouteMission(Node):
 
         self.lpos, self.lpos_t = None, 0.0
         self.relay_ok = False        # see on_lpos: no relay until PX4 reads ~0 height on the ground
-        self.relay_since = None
+        self.relay_hist = []         # (time, PX4 z) while waiting for it to be steady
         self.offboard, self.armed = False, None
         self.phase = 'WAIT'          # WAIT -> FLY -> (END_HOVER) -> LAND -> DONE -> WAIT on disarm
         self.path = self.carrot = None
@@ -121,10 +124,13 @@ class RouteMission(Node):
         # start relaying only once PX4 reads ~0 height on the ground, then relay continuously.
         if not self.relay_ok:
             if not (msg.xy_valid and msg.z_valid and abs(float(msg.z)) <= RELAY_Z_MAX_M):
-                self.relay_since = None
+                self.relay_hist = []
                 return
-            self.relay_since = self.relay_since or self.lpos_t
-            if self.lpos_t - self.relay_since < RELAY_STEADY_S:
+            self.relay_hist.append((self.lpos_t, float(msg.z)))
+            self.relay_hist = [(t, z) for t, z in self.relay_hist if self.lpos_t - t <= RELAY_STEADY_S]
+            zs = [z for _, z in self.relay_hist]
+            if (self.lpos_t - self.relay_hist[0][0] < RELAY_STEADY_S - 0.1
+                    or max(zs) - min(zs) > RELAY_STEADY_M):
                 return
             self.relay_ok = True
             self.get_logger().info(f'PX4 height {-float(msg.z):+.2f} m on the ground: relaying PX4 '
@@ -257,7 +263,7 @@ class RouteMission(Node):
             return                                # refused route: never offer a setpoint
         if not self.offboard:
             if not self.relay_ok:
-                self.event(f'waiting for PX4 height to settle at ~0 (now {pos[2]:+.2f} m) before '
+                self.event(f'waiting for PX4 height to be steady near 0 (now {pos[2]:+.2f} m) before '
                            "flight_interface's altitude band is set: publishing nothing, so no takeover",
                            warn=True, every=2.0)
                 return

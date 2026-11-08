@@ -15,7 +15,7 @@ What's new:
   - higher than `max_height` + 0.3 m;
   - PX4 position stale or invalid;
   - `max_time_s` (170 s) in the air.
-- **Height reference only once PX4 has settled:** flight_interface takes its 0.3 m floor and its ceiling from the first PX4 position we pass it. Right after boot, PX4's height reads ~0.5 m off for a while (drone 18, 2026-11-08: reference captured at 0.53 m, so floor 0.83 m and ceiling 2.53 m). So px4_route passes nothing until PX4 reads within 0.1 m of the floor for 1 s, and offers no takeover before then. Watch for `waiting for PX4 height to settle`, then `relaying PX4 position`.
+- **Height reference only once PX4 has settled:** flight_interface takes its 0.3 m floor and its ceiling from the first PX4 position we pass it. Right after boot, PX4's height reads ~0.5 m off for a while (drone 18, 2026-11-08: reference captured at 0.53 m, so floor 0.83 m and ceiling 2.53 m). So px4_route passes nothing until PX4 reads within 0.25 m of the floor AND has been steady (under 3 cm change) for 2 s, and offers no takeover before then. A steady +0.13 m on the floor is normal on drone 18. Watch for `waiting for PX4 height to be steady near 0`, then `relaying PX4 position`. **Arm only after the `relaying` line.**
 - **Logs survive reboots:** every flight writes `~/team_ws/runs/route-<time>.csv` (10 Hz: carrot, PX4 position, cross-track, rangefinder) and `route-<time>.log` (events).
 
 ## Files

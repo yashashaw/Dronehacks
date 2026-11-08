@@ -1,0 +1,43 @@
+{
+  "algo": "hazard/depthsuite/policies.py:CenterThenRight",
+  "samples": 400,
+  "labels_left_straight_right": [
+    38,
+    274,
+    88
+  ],
+  "balanced_acc": 0.401,
+  "direction_acc": 0.672,
+  "recall_left": 0.105,
+  "recall_straight": 0.905,
+  "recall_right": 0.193,
+  "sign_agreement_on_turns": 0.167,
+  "spearman_steer_vs_yaw1s": -0.001,
+  "coverage_mean": 0.769,
+  "latency_ms": {
+    "p50": 7.9,
+    "p95": 9.58,
+    "max": 13.69
+  },
+  "decision_rule_ms_p50": null,
+  "budget_ms": 50.0,
+  "latency_pass": true,
+  "actions": {
+    "stop": 206,
+    "straight": 138,
+    "turn_left": 29,
+    "turn_right": 27
+  },
+  "ci95": {
+    "balanced_acc": [
+      0.338,
+      0.482
+    ],
+    "spearman": [
+      -0.068,
+      0.248
+    ],
+    "blocks": 22,
+    "block_s": 5.0
+  }
+}

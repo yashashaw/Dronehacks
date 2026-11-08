@@ -1,0 +1,26 @@
+{
+  "samples": 400,
+  "t_span_s": [
+    10.0,
+    118.5
+  ],
+  "max_time_gap_s": 2.5,
+  "sync_ms_max": 0.023,
+  "yaw_1s_left_straight_right": [
+    38,
+    274,
+    88
+  ],
+  "rectification": {
+    "matches": 13948,
+    "infinity_shift_px": 13.03,
+    "dy_raw_median_px": -10.08,
+    "dy_rect_median_px": 0.04,
+    "dy_rect_p90_abs_px": 0.87,
+    "disparity_p5_p50_p95_px": [
+      1.9,
+      10.0,
+      33.5
+    ]
+  }
+}

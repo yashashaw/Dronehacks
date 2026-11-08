@@ -1,0 +1,22 @@
+# RETURN TO BASE (rule 7.10) for course_walk_DRAFT. Used ONLY if a course route file says
+#   return_route: return_to_x.yaml
+# Flown after the course has COMPLETED, landed and auto-disarmed on the pad: the node re-arms
+# by itself, climbs straight up from the pad, flies straight back over the walls/barrier and
+# lands on the X.
+# Waypoints are in the COURSE's start frame: metres from the X, x = forward (nose at the course
+# takeoff), y = left, z = up. The pad (course waypoint 14) is at about (-4.08, -0.69).
+# Heights: walls/barrier 1.73 m, tunnel top 1.82 m (course notes), net 3.05 m -> 2.3 m clears the
+# tunnel by ~0.5 m and stays ~0.75 m under the net. Flying above the walls is allowed on the return only.
+# Landing target: within 2 ft (0.61 m) of the launch mark.
+name: return-to-X
+takeoff_height: 2.30     # climb straight up from the pad to this first
+speed: 0.3
+corner_speed: 0.2
+climb_speed: 0.5
+max_height: 2.40         # needs flight_interface max_altitude_m 2.6 (the launch sets it when a return is on)
+max_cross_track: 50.0    # off-path landing OFF, same as the course
+yaw: fixed
+end: land
+waypoints:
+  - [0.00, 0.00, 2.30]   # straight back to above the X
+  - [0.00, 0.00, 0.60]   # down over the X, then land

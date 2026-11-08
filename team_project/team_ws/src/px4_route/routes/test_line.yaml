@@ -1,0 +1,13 @@
+# First flight of px4_route: up 0.8 m, 1 m straight ahead, back, land where it took off.
+# Start frame: metres from the takeoff point. x = forward (nose at takeoff), y = left, z = up.
+name: test-line
+takeoff_height: 0.8
+speed: 0.2
+corner_speed: 0.15
+max_height: 1.2
+max_cross_track: 0.4
+yaw: fixed
+end: land
+waypoints:
+  - [1.0, 0.0, 0.8]
+  - [0.0, 0.0, 0.8]

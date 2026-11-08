@@ -1,0 +1,13 @@
+# Return for test_hop.yaml (off-course test): from where the hop landed, straight up to 0.8 m,
+# back to above the takeoff point, land. Waypoints in test_hop's start frame ([0, 0, z] = takeoff).
+name: test-hop-return
+takeoff_height: 0.8
+speed: 0.25
+corner_speed: 0.15
+climb_speed: 0.5
+max_height: 1.2
+max_cross_track: 50.0
+yaw: fixed
+end: land
+waypoints:
+  - [0.0, 0.0, 0.8]

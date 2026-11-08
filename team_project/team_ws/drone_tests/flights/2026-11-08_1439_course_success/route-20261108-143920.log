@@ -1,0 +1,4 @@
+14:39:20 Offboard active: route "course-walk-DRAFT", 15.0 m, start (PX4 ENU) (0.01, -0.01, -0.10), heading 90 deg
+14:40:22 last waypoint reached in 61.8 s, max cross-track 0.23 m
+14:40:23 LAND: route complete
+14:40:35 landed and disarmed: done

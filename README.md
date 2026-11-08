@@ -1,5 +1,7 @@
 # Stanford DroneHacks 2026 — Challenge Reference
 
+> **Team project index: see [`team_project/`](team_project/README.md) for the code that flew, the CV runs and a map of every branch.**
+
 > Program the issued drone to fly an indoor obstacle course **autonomously, as fast as possible, with no GPS and no pilot input.**
 > Nov 6–8, 2026 · Drone net in Tresidder Oak · Questions: hello@stanfordhorizons.com
 

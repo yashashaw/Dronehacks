@@ -1,0 +1,57 @@
+{
+  "algo": "hazard/depthsuite/baselines.py:StereoBM",
+  "samples": 400,
+  "labels_left_straight_right": [
+    38,
+    274,
+    88
+  ],
+  "balanced_acc": 0.4,
+  "direction_acc": 0.378,
+  "recall_left": 0.342,
+  "recall_straight": 0.336,
+  "recall_right": 0.523,
+  "sign_agreement_on_turns": 0.563,
+  "spearman_steer_vs_yaw1s": 0.175,
+  "coverage_mean": 0.624,
+  "latency_ms": {
+    "p50": 3.65,
+    "p95": 4.69,
+    "max": 7.66
+  },
+  "decision_rule_ms_p50": 2.83,
+  "budget_ms": 50.0,
+  "latency_pass": true,
+  "ci95": {
+    "balanced_acc": [
+      0.258,
+      0.503
+    ],
+    "spearman": [
+      -0.009,
+      0.351
+    ],
+    "blocks": 22,
+    "block_s": 5.0
+  },
+  "hazard": {
+    "scored": 224,
+    "hazards": 32,
+    "clears": 192,
+    "caught": 32,
+    "missed_hazards": 0,
+    "false_stops": 192,
+    "hazard_recall": 1.0,
+    "false_stop_rate": 1.0,
+    "precision": 0.143,
+    "ci95_recall": [
+      1.0,
+      1.0
+    ],
+    "ci95_false_stop": [
+      1.0,
+      1.0
+    ]
+  },
+  "predicted_blocked_fraction": 1.0
+}

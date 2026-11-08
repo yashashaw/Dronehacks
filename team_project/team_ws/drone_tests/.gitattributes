@@ -1,0 +1,24 @@
+# Everything that runs on the drone (Linux) must keep LF line endings, whatever the
+# cloning machine's core.autocrlf says. A CRLF shell script fails on the Jetson with
+#   /usr/bin/env: 'bash\r': No such file or directory
+# (hit on drone 7, 2026-11-07, start_test.sh). Windows editors cope with LF fine.
+*.sh      text eol=lf
+*.py      text eol=lf
+*.cfg     text eol=lf
+*.xml     text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.params  text eol=lf
+*.service text eol=lf
+*.md      text eol=lf
+*.json    text eol=lf
+*.csv     text eol=lf
+Dockerfile* text eol=lf
+
+*.png  binary
+*.jpg  binary
+*.npy  binary
+*.ulg  binary
+*.mcap binary
+*.patch   text eol=lf
+*.diff    text eol=lf

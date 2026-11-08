@@ -1,0 +1,63 @@
+{
+  "algo": "hazard/depthsuite/policies.py:CenterThenRight",
+  "samples": 400,
+  "labels_left_straight_right": [
+    38,
+    274,
+    88
+  ],
+  "balanced_acc": 0.379,
+  "direction_acc": 0.647,
+  "recall_left": 0.079,
+  "recall_straight": 0.876,
+  "recall_right": 0.182,
+  "sign_agreement_on_turns": 0.151,
+  "spearman_steer_vs_yaw1s": 0.095,
+  "coverage_mean": 0.769,
+  "latency_ms": {
+    "p50": 10.7,
+    "p95": 13.8,
+    "max": 16.77
+  },
+  "decision_rule_ms_p50": null,
+  "budget_ms": 50.0,
+  "latency_pass": true,
+  "actions": {
+    "stop": 189,
+    "straight": 146,
+    "turn_left": 30,
+    "turn_right": 35
+  },
+  "ci95": {
+    "balanced_acc": [
+      0.322,
+      0.43
+    ],
+    "spearman": [
+      -0.095,
+      0.213
+    ],
+    "blocks": 22,
+    "block_s": 5.0
+  },
+  "hazard": {
+    "scored": 224,
+    "hazards": 32,
+    "clears": 192,
+    "caught": 31,
+    "missed_hazards": 1,
+    "false_stops": 115,
+    "hazard_recall": 0.969,
+    "false_stop_rate": 0.599,
+    "precision": 0.212,
+    "ci95_recall": [
+      0.85,
+      1.0
+    ],
+    "ci95_false_stop": [
+      0.454,
+      0.766
+    ]
+  },
+  "predicted_blocked_fraction": 0.635
+}

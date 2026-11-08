@@ -1,0 +1,37 @@
+{
+  "algo": "hazard/depthsuite/baselines.py:FlowNearness",
+  "samples": 400,
+  "labels_left_straight_right": [
+    38,
+    274,
+    88
+  ],
+  "balanced_acc": 0.38,
+  "direction_acc": 0.502,
+  "recall_left": 0.158,
+  "recall_straight": 0.584,
+  "recall_right": 0.398,
+  "sign_agreement_on_turns": 0.579,
+  "spearman_steer_vs_yaw1s": 0.151,
+  "coverage_mean": 1.0,
+  "latency_ms": {
+    "p50": 7.55,
+    "p95": 12.45,
+    "max": 22.29
+  },
+  "decision_rule_ms_p50": 2.55,
+  "budget_ms": 50.0,
+  "latency_pass": true,
+  "ci95": {
+    "balanced_acc": [
+      0.297,
+      0.447
+    ],
+    "spearman": [
+      -0.005,
+      0.276
+    ],
+    "blocks": 22,
+    "block_s": 5.0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "run_file": "C:\\Users\\lucas\\Documents\\git\\Dronehacks-drone-tests\\team_src\\dodge_nav\\dodge_nav\\dodge_nav.py",
+  "frames": 366,
+  "decisions": {
+    "STRAIGHT": 360,
+    "LEFT": 0,
+    "RIGHT": 3,
+    "HOLD": 3,
+    "STOP": 0,
+    "UNKNOWN": 0
+  },
+  "trigger_m": 0.5,
+  "kick_deg": 10.0,
+  "before_clear_frames": 133,
+  "before_clear_now_not_straight": [
+    34,
+    191,
+    192
+  ],
+  "consistency_ok": false,
+  "hand_clear_now_straight": "0/0",
+  "hand_blocked_now_turn_or_stop": "0/0"
+}

@@ -1,0 +1,367 @@
+id,t_s,decision,turn_deg,ahead_m,close_points_LCR_need,clip_frames,floor_ignored_at,before,hand_label,why
+0,30.0006,STRAIGHT,0.0,2.462,L0 C0 R0 /8,,-30 -20 -10 +0 +10,BLOCKED,,nearest 2.46 m > 0.50 m
+1,31.7006,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+2,31.9006,STRAIGHT,0.0,0.441,L340 C0 R0 /8,1/3,,BLOCKED,,not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.44 m (L 340 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.426): clip too deep for one sidestep)
+3,32.7006,STRAIGHT,0.0,1.832,L0 C0 R0 /8,,,BLOCKED,,nearest 1.83 m > 0.50 m
+4,33.5007,STRAIGHT,0.0,2.111,L0 C0 R0 /8,,-30,CLEAR,,nearest 2.11 m > 0.50 m
+5,33.6007,STRAIGHT,0.0,2.038,L0 C0 R0 /8,,+30,CLEAR,,nearest 2.04 m > 0.50 m
+6,33.8007,STRAIGHT,0.0,1.847,L0 C0 R0 /8,,,BLOCKED,,nearest 1.85 m > 0.50 m
+7,34.0007,STRAIGHT,0.0,1.804,L0 C0 R0 /8,,,BLOCKED,,nearest 1.80 m > 0.50 m
+8,34.1007,STRAIGHT,0.0,1.676,L0 C0 R0 /8,,,BLOCKED,,nearest 1.68 m > 0.50 m
+9,34.3007,STRAIGHT,0.0,1.468,L0 C0 R0 /8,,,BLOCKED,,nearest 1.47 m > 0.50 m
+10,34.4007,STRAIGHT,0.0,1.433,L0 C0 R0 /8,,,BLOCKED,,nearest 1.43 m > 0.50 m
+11,34.6007,STRAIGHT,0.0,1.251,L0 C0 R0 /8,,,BLOCKED,,nearest 1.25 m > 0.50 m
+12,34.8007,STRAIGHT,0.0,0.977,L0 C0 R0 /8,,,BLOCKED,,nearest 0.98 m > 0.50 m
+13,34.9007,STRAIGHT,0.0,0.796,L0 C0 R0 /8,,,BLOCKED,,nearest 0.80 m > 0.50 m
+14,35.1007,STRAIGHT,0.0,0.627,L0 C0 R0 /8,,,BLOCKED,,nearest 0.63 m > 0.50 m
+15,35.2007,STRAIGHT,0.0,0.531,L0 C0 R0 /8,,,CLEAR,,nearest 0.53 m > 0.50 m
+16,35.4007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+17,35.5007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+18,35.7007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+19,35.9007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+20,36.0007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+21,36.2007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+22,36.3007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+23,36.5007,STRAIGHT,0.0,2.437,L0 C0 R0 /8,,-20,CLEAR,,nearest 2.44 m > 0.50 m
+24,36.7007,STRAIGHT,0.0,2.111,L0 C0 R0 /8,,,CLEAR,,nearest 2.11 m > 0.50 m
+25,36.8007,STRAIGHT,0.0,2.092,L0 C0 R0 /8,,+20 +30,CLEAR,,nearest 2.09 m > 0.50 m
+26,37.0007,STRAIGHT,0.0,1.764,L0 C0 R0 /8,,,BLOCKED,,nearest 1.76 m > 0.50 m
+27,37.1007,STRAIGHT,0.0,1.676,L0 C0 R0 /8,,,BLOCKED,,nearest 1.68 m > 0.50 m
+28,37.4007,STRAIGHT,0.0,,L0 C0 R0 /8,,+10 +20 +30,CLEAR,,nothing in the box
+29,37.6007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+30,37.8007,STRAIGHT,0.0,0.389,L0 C0 R259 /8,1/3,,CLEAR,,not confirmed: clip_right on 1 of 3 frames in a row (clip on the RIGHT prop at 0.39 m (L 0 / C 0 / R 259 (need 8)); 10 deg left not clear for 0.6 m (0.354): clip too deep for one sidestep)
+31,37.9007,STRAIGHT,0.0,2.073,L0 C0 R0 /8,,-20 -10 +0 +10,BLOCKED,,nearest 2.07 m > 0.50 m
+32,38.9007,STRAIGHT,0.0,0.391,L60 C0 R0 /8,2/3,-30 -20 -10 +0,CLEAR,,"not confirmed: clip_left on 2 of 3 frames in a row (clip on the LEFT prop at 0.39 m (L 60 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back)"
+33,39.0007,STRAIGHT,0.0,0.391,L418 C3 R256 /8,,-30 -20 -10,BLOCKED,,"something 0.39 m RIGHT IN FRONT, not a clip (L 418 / C 3 / R 256 (need 8)): ignored"
+34,39.2007,RIGHT,-10.0,0.393,L20 C0 R0 /8,3/3,,CLEAR,,"clip on the LEFT prop at 0.39 m (L 20 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back"
+35,39.5007,STRAIGHT,0.0,0.49,L129 C90 R0 /8,,,BLOCKED,,"something 0.49 m RIGHT IN FRONT, not a clip (L 129 / C 90 / R 0 (need 8)): ignored"
+36,39.7007,STRAIGHT,0.0,,L0 C0 R0 /8,,-10 +0 +10 +20 +30,CLEAR,,nothing in the box
+37,39.8007,STRAIGHT,0.0,,L0 C0 R0 /8,,-10 +0 +10 +20 +30,CLEAR,,nothing in the box
+38,40.0007,STRAIGHT,0.0,2.169,L6 C0 R0 /8,,+10 +20 +30,CLEAR,,nearest 2.17 m > 0.50 m
+39,40.1007,STRAIGHT,0.0,1.468,L0 C3 R0 /8,,,BLOCKED,,nearest 1.47 m > 0.50 m
+40,40.3007,STRAIGHT,0.0,1.212,L0 C0 R0 /8,,,BLOCKED,,nearest 1.21 m > 0.50 m
+41,40.4007,STRAIGHT,0.0,1.231,L0 C0 R0 /8,,,BLOCKED,,nearest 1.23 m > 0.50 m
+42,40.6007,STRAIGHT,0.0,1.225,L0 C0 R0 /8,,,BLOCKED,,nearest 1.23 m > 0.50 m
+43,40.8007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+44,40.9007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+45,41.1007,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+46,41.6009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,,BLOCKED,,nearest 1.64 m > 0.50 m
+47,41.7009,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+48,42.7009,STRAIGHT,0.0,0.393,L0 C112 R0 /8,,,CLEAR,,"something 0.39 m RIGHT IN FRONT, not a clip (L 0 / C 112 / R 0 (need 8)): ignored"
+49,42.8009,STRAIGHT,0.0,0.389,L0 C10 R0 /8,,,CLEAR,,"something 0.39 m RIGHT IN FRONT, not a clip (L 0 / C 10 / R 0 (need 8)): ignored"
+50,43.0009,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+51,43.1009,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+52,43.3009,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+53,43.6009,STRAIGHT,0.0,2.111,L0 C0 R0 /8,,,CLEAR,,nearest 2.11 m > 0.50 m
+54,43.8009,STRAIGHT,0.0,0.981,L0 C0 R0 /8,,,BLOCKED,,nearest 0.98 m > 0.50 m
+55,43.9009,STRAIGHT,0.0,1.299,L0 C0 R0 /8,,,BLOCKED,,nearest 1.30 m > 0.50 m
+56,44.1009,STRAIGHT,0.0,1.2,L0 C0 R0 /8,,,BLOCKED,,nearest 1.20 m > 0.50 m
+57,44.7009,STRAIGHT,0.0,0.513,L0 C0 R0 /8,,,BLOCKED,,nearest 0.51 m > 0.50 m
+58,44.9009,STRAIGHT,0.0,0.492,L12 C37 R0 /8,,,CLEAR,,"something 0.49 m RIGHT IN FRONT, not a clip (L 12 / C 37 / R 0 (need 8)): ignored"
+59,45.0009,STRAIGHT,0.0,0.481,L352 C0 R0 /8,1/3,,CLEAR,,not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.48 m (L 352 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.453): clip too deep for one sidestep)
+60,45.2009,STRAIGHT,0.0,0.391,L159 C0 R0 /8,2/3,,CLEAR,,"not confirmed: clip_left on 2 of 3 frames in a row (clip on the LEFT prop at 0.39 m (L 159 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back)"
+61,45.3009,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+62,45.5009,STRAIGHT,0.0,1.477,L0 C0 R0 /8,,,BLOCKED,,nearest 1.48 m > 0.50 m
+63,45.7009,STRAIGHT,0.0,1.328,L0 C0 R0 /8,,,BLOCKED,,nearest 1.33 m > 0.50 m
+64,45.8009,STRAIGHT,0.0,1.343,L0 C0 R0 /8,,,BLOCKED,,nearest 1.34 m > 0.50 m
+65,46.0009,STRAIGHT,0.0,1.39,L0 C0 R0 /8,,+30,BLOCKED,,nearest 1.39 m > 0.50 m
+66,46.1009,STRAIGHT,0.0,1.407,L0 C0 R0 /8,,,BLOCKED,,nearest 1.41 m > 0.50 m
+67,46.3009,STRAIGHT,0.0,1.459,L0 C0 R0 /8,,,BLOCKED,,nearest 1.46 m > 0.50 m
+68,46.5009,STRAIGHT,0.0,1.487,L0 C0 R0 /8,,+20 +30,BLOCKED,,nearest 1.49 m > 0.50 m
+69,46.6009,STRAIGHT,0.0,1.597,L0 C0 R0 /8,,+20 +30,BLOCKED,,nearest 1.60 m > 0.50 m
+70,46.8009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+71,46.9009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+72,47.1009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+73,47.2009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+74,47.4009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+75,47.6009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+76,47.7009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+77,47.9009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+78,48.0009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+79,48.2009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+80,48.4009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+81,48.8009,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+82,49.001,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+83,49.101,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+84,49.301,STRAIGHT,0.0,1.586,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.59 m > 0.50 m
+85,49.501,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+86,49.601,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+87,49.801,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+88,49.901,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+89,50.101,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+90,50.301,STRAIGHT,0.0,1.597,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.60 m > 0.50 m
+91,50.401,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+92,50.701,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+93,50.901,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+94,51.001,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+95,51.201,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+96,51.301,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.64 m > 0.50 m
+97,51.501,STRAIGHT,0.0,1.084,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.08 m > 0.50 m
+98,51.701,STRAIGHT,0.0,1.653,L0 C0 R0 /8,,+30,BLOCKED,,nearest 1.65 m > 0.50 m
+99,52.001,STRAIGHT,0.0,1.63,L0 C0 R0 /8,,,BLOCKED,,nearest 1.63 m > 0.50 m
+100,52.501,STRAIGHT,0.0,1.597,L0 C0 R0 /8,,,BLOCKED,,nearest 1.60 m > 0.50 m
+101,52.601,STRAIGHT,0.0,1.63,L0 C0 R0 /8,,,BLOCKED,,nearest 1.63 m > 0.50 m
+102,52.801,STRAIGHT,0.0,1.63,L0 C0 R0 /8,,,BLOCKED,,nearest 1.63 m > 0.50 m
+103,52.901,STRAIGHT,0.0,1.63,L0 C0 R0 /8,,,BLOCKED,,nearest 1.63 m > 0.50 m
+104,53.101,STRAIGHT,0.0,1.63,L0 C0 R0 /8,,,BLOCKED,,nearest 1.63 m > 0.50 m
+105,53.301,STRAIGHT,0.0,1.619,L0 C0 R0 /8,,,BLOCKED,,nearest 1.62 m > 0.50 m
+106,53.401,STRAIGHT,0.0,1.576,L0 C0 R0 /8,,,BLOCKED,,nearest 1.58 m > 0.50 m
+107,53.601,STRAIGHT,0.0,1.586,L0 C0 R0 /8,,,BLOCKED,,nearest 1.59 m > 0.50 m
+108,53.701,STRAIGHT,0.0,1.487,L0 C0 R0 /8,,,BLOCKED,,nearest 1.49 m > 0.50 m
+109,53.901,STRAIGHT,0.0,1.477,L0 C0 R0 /8,,,BLOCKED,,nearest 1.48 m > 0.50 m
+110,54.001,STRAIGHT,0.0,1.477,L0 C0 R0 /8,,,BLOCKED,,nearest 1.48 m > 0.50 m
+111,54.201,STRAIGHT,0.0,1.459,L0 C0 R0 /8,,,BLOCKED,,nearest 1.46 m > 0.50 m
+112,54.401,STRAIGHT,0.0,1.351,L0 C0 R0 /8,,,BLOCKED,,nearest 1.35 m > 0.50 m
+113,54.501,STRAIGHT,0.0,1.343,L0 C0 R0 /8,,,BLOCKED,,nearest 1.34 m > 0.50 m
+114,54.701,STRAIGHT,0.0,1.328,L0 C0 R0 /8,,,BLOCKED,,nearest 1.33 m > 0.50 m
+115,54.801,STRAIGHT,0.0,1.244,L0 C0 R0 /8,,,BLOCKED,,nearest 1.24 m > 0.50 m
+116,55.001,STRAIGHT,0.0,1.218,L0 C0 R0 /8,,,BLOCKED,,nearest 1.22 m > 0.50 m
+117,55.201,STRAIGHT,0.0,1.136,L0 C0 R0 /8,,,BLOCKED,,nearest 1.14 m > 0.50 m
+118,55.301,STRAIGHT,0.0,1.074,L0 C0 R0 /8,,,BLOCKED,,nearest 1.07 m > 0.50 m
+119,55.401,STRAIGHT,0.0,1.041,L0 C0 R0 /8,,,BLOCKED,,nearest 1.04 m > 0.50 m
+120,55.601,STRAIGHT,0.0,0.931,L0 C0 R0 /8,,,BLOCKED,,nearest 0.93 m > 0.50 m
+121,55.801,STRAIGHT,0.0,0.863,L0 C0 R0 /8,,,BLOCKED,,nearest 0.86 m > 0.50 m
+122,55.901,STRAIGHT,0.0,0.821,L0 C0 R0 /8,,,BLOCKED,,nearest 0.82 m > 0.50 m
+123,56.101,STRAIGHT,0.0,0.76,L0 C0 R0 /8,,,BLOCKED,,nearest 0.76 m > 0.50 m
+124,56.301,STRAIGHT,0.0,0.691,L0 C0 R0 /8,,,BLOCKED,,nearest 0.69 m > 0.50 m
+125,56.601,STRAIGHT,0.0,0.622,L0 C0 R0 /8,,,BLOCKED,,nearest 0.62 m > 0.50 m
+126,56.701,STRAIGHT,0.0,0.399,L0 C208 R0 /8,,-30 -20 +20 +30,BLOCKED,,"something 0.40 m RIGHT IN FRONT, not a clip (L 0 / C 208 / R 0 (need 8)): ignored"
+127,56.901,STRAIGHT,0.0,0.389,L28 C148 R0 /8,,-30 -20,BLOCKED,,"something 0.39 m RIGHT IN FRONT, not a clip (L 28 / C 148 / R 0 (need 8)): ignored"
+128,57.101,STRAIGHT,0.0,0.605,L0 C0 R0 /8,,,BLOCKED,,nearest 0.60 m > 0.50 m
+129,57.2012,RIGHT,-10.0,0.4,L9 C0 R0 /8,3/3,-10,BLOCKED,,"clip on the LEFT prop at 0.40 m (L 9 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back"
+130,57.4012,STRAIGHT,0.0,0.739,L0 C0 R0 /8,,-10 +0,BLOCKED,,nearest 0.74 m > 0.50 m
+131,57.5012,STRAIGHT,0.0,0.77,L0 C0 R0 /8,,-10 +0 +30,BLOCKED,,nearest 0.77 m > 0.50 m
+132,57.7012,STRAIGHT,0.0,0.863,L0 C0 R0 /8,,-10 +0,BLOCKED,,nearest 0.86 m > 0.50 m
+133,57.8012,STRAIGHT,0.0,0.889,L0 C0 R0 /8,,+0 +10 +20 +30,BLOCKED,,nearest 0.89 m > 0.50 m
+134,58.0012,STRAIGHT,0.0,1.11,L0 C0 R0 /8,,+0 +10,BLOCKED,,nearest 1.11 m > 0.50 m
+135,58.3012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+136,58.4012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+137,58.6012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+138,58.8012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+139,59.0012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+140,59.1012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+141,59.3012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+142,59.6012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+143,59.7012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+144,59.9012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+145,60.1012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+146,60.2012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+147,60.4012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+148,60.5012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+149,60.7012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+150,60.8012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+151,61.0012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+152,61.2012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+153,61.3012,STRAIGHT,0.0,,L0 C0 R0 /8,,-30,CLEAR,,nothing in the box
+154,61.5012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+155,61.6012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+156,61.8012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+157,62.1012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+158,62.3012,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+159,62.4012,STRAIGHT,0.0,2.364,L0 C0 R0 /8,,,CLEAR,,nearest 2.36 m > 0.50 m
+160,62.6012,STRAIGHT,0.0,1.938,L0 C0 R0 /8,,,BLOCKED,,nearest 1.94 m > 0.50 m
+161,62.7012,STRAIGHT,0.0,1.861,L0 C0 R0 /8,,,BLOCKED,,nearest 1.86 m > 0.50 m
+162,62.9012,STRAIGHT,0.0,1.818,L0 C0 R0 /8,,+10,BLOCKED,,nearest 1.82 m > 0.50 m
+163,63.1012,STRAIGHT,0.0,2.111,L0 C0 R0 /8,,,CLEAR,,nearest 2.11 m > 0.50 m
+164,63.2012,STRAIGHT,0.0,1.906,L0 C0 R0 /8,,,BLOCKED,,nearest 1.91 m > 0.50 m
+165,63.4012,STRAIGHT,0.0,1.891,L0 C0 R0 /8,,+0,BLOCKED,,nearest 1.89 m > 0.50 m
+166,63.5012,STRAIGHT,0.0,0.866,L0 C0 R0 /8,,-10,BLOCKED,,nearest 0.87 m > 0.50 m
+167,63.7012,STRAIGHT,0.0,0.856,L0 C0 R0 /8,,,BLOCKED,,nearest 0.86 m > 0.50 m
+168,68.8013,STRAIGHT,0.0,1.306,L0 C0 R0 /8,,,BLOCKED,,nearest 1.31 m > 0.50 m
+169,68.9013,STRAIGHT,0.0,1.525,L0 C0 R0 /8,,,BLOCKED,,nearest 1.52 m > 0.50 m
+170,69.1013,STRAIGHT,0.0,1.818,L0 C0 R0 /8,,,BLOCKED,,nearest 1.82 m > 0.50 m
+171,69.2013,STRAIGHT,0.0,0.683,L0 C0 R0 /8,,,BLOCKED,,nearest 0.68 m > 0.50 m
+172,69.4013,STRAIGHT,0.0,0.407,L0 C335 R0 /8,,,CLEAR,,"something 0.41 m RIGHT IN FRONT, not a clip (L 0 / C 335 / R 0 (need 8)): ignored"
+173,69.5013,STRAIGHT,0.0,0.414,L0 C198 R0 /8,,,CLEAR,,"something 0.41 m RIGHT IN FRONT, not a clip (L 0 / C 198 / R 0 (need 8)): ignored"
+174,69.7013,STRAIGHT,0.0,1.231,L0 C0 R0 /8,,,BLOCKED,,nearest 1.23 m > 0.50 m
+175,69.9013,STRAIGHT,0.0,0.451,L19 C0 R0 /8,1/3,+0 +10 +20 +30,BLOCKED,,"not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.45 m (L 19 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back)"
+176,70.0013,STRAIGHT,0.0,0.439,L0 C51 R0 /8,,+20 +30,BLOCKED,,"something 0.44 m RIGHT IN FRONT, not a clip (L 0 / C 51 / R 0 (need 8)): ignored"
+177,70.2013,STRAIGHT,0.0,0.507,L0 C0 R0 /8,,,BLOCKED,,nearest 0.51 m > 0.50 m
+178,70.5013,STRAIGHT,0.0,0.555,L0 C0 R0 /8,,+10 +30,BLOCKED,,nearest 0.56 m > 0.50 m
+179,70.8013,STRAIGHT,0.0,2.055,L0 C0 R0 /8,,,BLOCKED,,nearest 2.06 m > 0.50 m
+180,71.0013,STRAIGHT,0.0,1.847,L0 C0 R0 /8,,,BLOCKED,,nearest 1.85 m > 0.50 m
+181,74.8015,STRAIGHT,0.0,0.389,L444 C142 R0 /8,,-20,BLOCKED,,"something 0.39 m RIGHT IN FRONT, not a clip (L 444 / C 142 / R 0 (need 8)): ignored"
+182,76.2015,STRAIGHT,0.0,0.524,L0 C0 R0 /8,,-10 +0 +10 +20 +30,CLEAR,,nearest 0.52 m > 0.50 m
+183,76.3015,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+184,76.5015,STRAIGHT,0.0,,L0 C0 R0 /8,,-10 +0 +10 +20 +30,BLOCKED,,nothing in the box
+185,76.7015,STRAIGHT,0.0,,L0 C0 R0 /8,,,BLOCKED,,nothing in the box
+186,76.8015,STRAIGHT,0.0,,L0 C0 R0 /8,,-10 +0 +10 +20 +30,BLOCKED,,nothing in the box
+187,77.0015,STRAIGHT,0.0,0.397,L93 C0 R0 /8,1/3,,BLOCKED,,not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.40 m (L 93 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.365): clip too deep for one sidestep)
+188,77.1015,STRAIGHT,0.0,,L0 C0 R0 /8,,+0 +10 +20 +30,BLOCKED,,nothing in the box
+189,77.3015,STRAIGHT,0.0,0.479,L101 C0 R0 /8,1/3,,CLEAR,,"not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.48 m (L 101 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back)"
+190,77.5015,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+191,77.6015,RIGHT,-10.0,0.392,L251 C0 R0 /8,3/3,-10,CLEAR,,"clip on the LEFT prop at 0.39 m (L 251 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back"
+192,77.8015,HOLD,0.0,0.392,L199 C0 R0 /8,3/3,,CLEAR,,clip on the LEFT prop at 0.39 m (L 199 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.359): clip too deep for one sidestep
+193,78.0015,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+194,78.1015,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+195,78.2015,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+196,78.4015,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+197,78.6015,STRAIGHT,0.0,1.079,L0 C0 R0 /8,,,BLOCKED,,nearest 1.08 m > 0.50 m
+198,78.7015,STRAIGHT,0.0,1.041,L0 C0 R0 /8,,,BLOCKED,,nearest 1.04 m > 0.50 m
+199,79.1015,STRAIGHT,0.0,0.934,L0 C0 R0 /8,,,BLOCKED,,nearest 0.93 m > 0.50 m
+200,80.0015,STRAIGHT,0.0,2.462,L0 C0 R0 /8,,,CLEAR,,nearest 2.46 m > 0.50 m
+201,80.5015,STRAIGHT,0.0,1.922,L0 C0 R0 /8,,,BLOCKED,,nearest 1.92 m > 0.50 m
+202,80.8015,STRAIGHT,0.0,1.832,L0 C0 R0 /8,,+20 +30,BLOCKED,,nearest 1.83 m > 0.50 m
+203,81.4016,STRAIGHT,0.0,1.608,L0 C0 R0 /8,,,BLOCKED,,nearest 1.61 m > 0.50 m
+204,81.9016,STRAIGHT,0.0,1.094,L0 C0 R0 /8,,,BLOCKED,,nearest 1.09 m > 0.50 m
+205,82.0016,STRAIGHT,0.0,1.343,L0 C0 R0 /8,,-10,BLOCKED,,nearest 1.34 m > 0.50 m
+206,82.2016,STRAIGHT,0.0,0.683,L0 C0 R0 /8,,,BLOCKED,,nearest 0.68 m > 0.50 m
+207,82.5016,STRAIGHT,0.0,0.434,L84 C0 R0 /8,1/3,,CLEAR,,not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.43 m (L 84 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.403): clip too deep for one sidestep)
+208,82.7016,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+209,82.8016,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+210,83.0016,STRAIGHT,0.0,0.981,L0 C0 R0 /8,,,BLOCKED,,nearest 0.98 m > 0.50 m
+211,83.2016,STRAIGHT,0.0,0.41,L0 C10 R0 /8,,-30,CLEAR,,"something 0.41 m RIGHT IN FRONT, not a clip (L 0 / C 10 / R 0 (need 8)): ignored"
+212,83.3016,STRAIGHT,0.0,,L0 C0 R0 /8,,+10,CLEAR,,nothing in the box
+213,83.5016,STRAIGHT,0.0,0.653,L0 C0 R0 /8,,,BLOCKED,,nearest 0.65 m > 0.50 m
+214,83.6016,STRAIGHT,0.0,0.421,L45 C159 R0 /8,,,BLOCKED,,"something 0.42 m RIGHT IN FRONT, not a clip (L 45 / C 159 / R 0 (need 8)): ignored"
+215,83.8016,STRAIGHT,0.0,0.619,L0 C0 R0 /8,,,CLEAR,,nearest 0.62 m > 0.50 m
+216,83.9016,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+217,84.1016,STRAIGHT,0.0,0.446,L0 C45 R0 /8,,,CLEAR,,"something 0.45 m RIGHT IN FRONT, not a clip (L 0 / C 45 / R 0 (need 8)): ignored"
+218,84.3016,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+219,84.4016,STRAIGHT,0.0,0.588,L0 C0 R0 /8,,-30,CLEAR,,nearest 0.59 m > 0.50 m
+220,84.6016,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+221,84.7016,STRAIGHT,0.0,2.488,L0 C0 R0 /8,,,CLEAR,,nearest 2.49 m > 0.50 m
+222,86.5016,STRAIGHT,0.0,2.34,L0 C0 R0 /8,,,CLEAR,,nearest 2.34 m > 0.50 m
+223,86.6016,STRAIGHT,0.0,2.462,L0 C0 R0 /8,,,CLEAR,,nearest 2.46 m > 0.50 m
+224,86.8016,STRAIGHT,0.0,2.462,L0 C0 R0 /8,,,CLEAR,,nearest 2.46 m > 0.50 m
+225,86.9016,STRAIGHT,0.0,2.462,L2 C0 R0 /8,,,CLEAR,,nearest 2.46 m > 0.50 m
+226,87.1016,STRAIGHT,0.0,2.111,L0 C0 R0 /8,,,CLEAR,,nearest 2.11 m > 0.50 m
+227,87.3016,STRAIGHT,0.0,2.412,L0 C0 R0 /8,,-20,CLEAR,,nearest 2.41 m > 0.50 m
+228,87.4016,STRAIGHT,0.0,2.209,L0 C0 R0 /8,,,BLOCKED,,nearest 2.21 m > 0.50 m
+229,87.7016,STRAIGHT,0.0,2.437,L0 C0 R0 /8,,,CLEAR,,nearest 2.44 m > 0.50 m
+230,87.9018,STRAIGHT,0.0,2.462,L0 C0 R0 /8,,,CLEAR,,nearest 2.46 m > 0.50 m
+231,88.1018,STRAIGHT,0.0,,L0 C0 R0 /8,,,BLOCKED,,nothing in the box
+232,88.2018,STRAIGHT,0.0,,L0 C0 R0 /8,,,BLOCKED,,nothing in the box
+233,88.4018,STRAIGHT,0.0,0.473,L65 C0 R0 /8,1/3,-30 -20,CLEAR,,"not confirmed: clip_left on 1 of 3 frames in a row (clip on the LEFT prop at 0.47 m (L 65 / C 0 / R 0 (need 8)) -> 10 deg right, 0.5 m, then back)"
+234,88.5018,STRAIGHT,0.0,2.317,L0 C0 R0 /8,,,CLEAR,,nearest 2.32 m > 0.50 m
+235,88.7018,STRAIGHT,0.0,0.985,L0 C0 R0 /8,,,BLOCKED,,nearest 0.98 m > 0.50 m
+236,88.8018,STRAIGHT,0.0,0.807,L0 C0 R0 /8,,,BLOCKED,,nearest 0.81 m > 0.50 m
+237,89.0018,STRAIGHT,0.0,2.23,L0 C0 R0 /8,,,CLEAR,,nearest 2.23 m > 0.50 m
+238,89.2018,STRAIGHT,0.0,2.169,L0 C0 R0 /8,,,CLEAR,,nearest 2.17 m > 0.50 m
+239,89.3018,STRAIGHT,0.0,2.189,L0 C0 R0 /8,,,CLEAR,,nearest 2.19 m > 0.50 m
+240,89.6018,STRAIGHT,0.0,2.038,L0 C0 R0 /8,,,CLEAR,,nearest 2.04 m > 0.50 m
+241,90.0018,STRAIGHT,0.0,2.02,L0 C0 R0 /8,,,CLEAR,,nearest 2.02 m > 0.50 m
+242,90.1018,STRAIGHT,0.0,1.861,L0 C0 R0 /8,,+0 +10 +20 +30,BLOCKED,,nearest 1.86 m > 0.50 m
+243,90.2018,STRAIGHT,0.0,1.847,L0 C0 R0 /8,,+0,BLOCKED,,nearest 1.85 m > 0.50 m
+244,90.4018,STRAIGHT,0.0,1.847,L0 C0 R0 /8,,-10 +0 +10 +20 +30,BLOCKED,,nearest 1.85 m > 0.50 m
+245,90.7018,STRAIGHT,0.0,0.528,L0 C0 R0 /8,,-10 +0 +10 +20 +30,CLEAR,,nearest 0.53 m > 0.50 m
+246,90.9018,STRAIGHT,0.0,0.546,L0 C0 R0 /8,,-10,CLEAR,,nearest 0.55 m > 0.50 m
+247,91.1018,STRAIGHT,0.0,0.409,L0 C61 R0 /8,,,BLOCKED,,"something 0.41 m RIGHT IN FRONT, not a clip (L 0 / C 61 / R 0 (need 8)): ignored"
+248,91.4018,STRAIGHT,0.0,0.477,L71 C0 R0 /8,2/3,+20 +30,BLOCKED,,not confirmed: clip_left on 2 of 3 frames in a row (clip on the LEFT prop at 0.48 m (L 71 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.549): clip too deep for one sidestep)
+249,91.5018,STRAIGHT,0.0,0.528,L0 C0 R0 /8,,,BLOCKED,,nearest 0.53 m > 0.50 m
+250,91.7018,STRAIGHT,0.0,1.777,L0 C0 R0 /8,,,BLOCKED,,nearest 1.78 m > 0.50 m
+251,92.0018,STRAIGHT,0.0,0.637,L0 C0 R0 /8,,,BLOCKED,,nearest 0.64 m > 0.50 m
+252,92.2018,STRAIGHT,0.0,1.876,L0 C0 R0 /8,,,BLOCKED,,nearest 1.88 m > 0.50 m
+253,92.3018,STRAIGHT,0.0,1.922,L0 C0 R0 /8,,,BLOCKED,,nearest 1.92 m > 0.50 m
+254,92.5018,STRAIGHT,0.0,1.876,L0 C0 R0 /8,,,BLOCKED,,nearest 1.88 m > 0.50 m
+255,92.6018,STRAIGHT,0.0,2.038,L0 C0 R0 /8,,,CLEAR,,nearest 2.04 m > 0.50 m
+256,92.8018,STRAIGHT,0.0,2.13,L0 C0 R0 /8,,,CLEAR,,nearest 2.13 m > 0.50 m
+257,93.0018,STRAIGHT,0.0,2.111,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 2.11 m > 0.50 m
+258,93.1018,STRAIGHT,0.0,1.791,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.79 m > 0.50 m
+259,93.3018,STRAIGHT,0.0,0.73,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.73 m > 0.50 m
+260,93.4018,STRAIGHT,0.0,0.547,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.55 m > 0.50 m
+261,93.6018,STRAIGHT,0.0,0.449,L166 C131 R296 /8,,,BLOCKED,,"something 0.45 m RIGHT IN FRONT, not a clip (L 166 / C 131 / R 296 (need 8)): ignored"
+262,93.7018,STRAIGHT,0.0,0.575,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.57 m > 0.50 m
+263,93.9018,STRAIGHT,0.0,0.77,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.77 m > 0.50 m
+264,94.0018,STRAIGHT,0.0,0.746,L0 C0 R0 /8,,-30 -20 -10 +0 +20 +30,BLOCKED,,nearest 0.75 m > 0.50 m
+265,94.2018,STRAIGHT,0.0,0.772,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.77 m > 0.50 m
+266,94.4018,STRAIGHT,0.0,0.78,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.78 m > 0.50 m
+267,94.5018,STRAIGHT,0.0,0.775,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.78 m > 0.50 m
+268,94.7018,STRAIGHT,0.0,0.564,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.56 m > 0.50 m
+269,94.9017,STRAIGHT,0.0,0.775,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.78 m > 0.50 m
+270,95.2017,STRAIGHT,0.0,0.775,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.78 m > 0.50 m
+271,95.3017,STRAIGHT,0.0,0.785,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.79 m > 0.50 m
+272,95.5017,STRAIGHT,0.0,0.788,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.79 m > 0.50 m
+273,95.6017,STRAIGHT,0.0,0.772,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.77 m > 0.50 m
+274,96.1019,STRAIGHT,0.0,0.672,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.67 m > 0.50 m
+275,96.3019,STRAIGHT,0.0,0.67,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.67 m > 0.50 m
+276,96.4019,STRAIGHT,0.0,0.788,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.79 m > 0.50 m
+277,96.6019,STRAIGHT,0.0,0.775,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.78 m > 0.50 m
+278,96.8019,STRAIGHT,0.0,0.666,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.67 m > 0.50 m
+279,96.9019,STRAIGHT,0.0,0.664,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.66 m > 0.50 m
+280,97.1019,STRAIGHT,0.0,0.664,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.66 m > 0.50 m
+281,97.2019,STRAIGHT,0.0,0.391,L5 C286 R109 /8,,-30 -20 -10 +10 +20 +30,BLOCKED,,"something 0.39 m RIGHT IN FRONT, not a clip (L 5 / C 286 / R 109 (need 8)): ignored"
+282,97.4019,STRAIGHT,0.0,0.39,L0 C209 R194 /8,,-30 -20 -10 +30,BLOCKED,,"something 0.39 m RIGHT IN FRONT, not a clip (L 0 / C 209 / R 194 (need 8)): ignored"
+283,97.5019,STRAIGHT,0.0,0.673,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.67 m > 0.50 m
+284,97.7019,STRAIGHT,0.0,0.672,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.67 m > 0.50 m
+285,97.9019,STRAIGHT,0.0,0.415,L23 C82 R0 /8,,-30 -20 -10,BLOCKED,,"something 0.41 m RIGHT IN FRONT, not a clip (L 23 / C 82 / R 0 (need 8)): ignored"
+286,98.0019,STRAIGHT,0.0,0.697,L0 C0 R0 /8,,-30 -20 -10 +0 +20 +30,BLOCKED,,nearest 0.70 m > 0.50 m
+287,98.2019,STRAIGHT,0.0,0.392,L0 C0 R19 /8,1/3,+10 +20 +30,BLOCKED,,"not confirmed: clip_right on 1 of 3 frames in a row (clip on the RIGHT prop at 0.39 m (L 0 / C 0 / R 19 (need 8)) -> 10 deg left, 0.5 m, then back)"
+288,98.3019,STRAIGHT,0.0,2.437,L0 C0 R0 /8,,+0 +10,CLEAR,,nearest 2.44 m > 0.50 m
+289,98.5019,STRAIGHT,0.0,2.209,L0 C0 R0 /8,,,CLEAR,,nearest 2.21 m > 0.50 m
+290,98.7019,STRAIGHT,0.0,2.437,L0 C0 R0 /8,,-30,CLEAR,,nearest 2.44 m > 0.50 m
+291,102.6019,STRAIGHT,0.0,1.051,L0 C0 R0 /8,,-20,BLOCKED,,nearest 1.05 m > 0.50 m
+292,102.8019,STRAIGHT,0.0,1.028,L0 C0 R0 /8,,,BLOCKED,,nearest 1.03 m > 0.50 m
+293,102.9019,STRAIGHT,0.0,1.019,L0 C0 R0 /8,,,BLOCKED,,nearest 1.02 m > 0.50 m
+294,103.6019,STRAIGHT,0.0,0.989,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.99 m > 0.50 m
+295,103.7019,STRAIGHT,0.0,0.942,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.94 m > 0.50 m
+296,103.902,STRAIGHT,0.0,0.989,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.99 m > 0.50 m
+297,104.002,STRAIGHT,0.0,0.993,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.99 m > 0.50 m
+298,104.202,STRAIGHT,0.0,0.417,L0 C0 R37 /8,1/3,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,"not confirmed: clip_right on 1 of 3 frames in a row (clip on the RIGHT prop at 0.42 m (L 0 / C 0 / R 37 (need 8)) -> 10 deg left, 0.5 m, then back)"
+299,104.302,STRAIGHT,0.0,0.985,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.98 m > 0.50 m
+300,104.502,STRAIGHT,0.0,0.985,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 0.98 m > 0.50 m
+301,106.702,STRAIGHT,0.0,1.019,L0 C0 R0 /8,,,BLOCKED,,nearest 1.02 m > 0.50 m
+302,106.902,STRAIGHT,0.0,1.07,L0 C0 R0 /8,,+30,BLOCKED,,nearest 1.07 m > 0.50 m
+303,107.002,STRAIGHT,0.0,1.084,L0 C0 R0 /8,,+20 +30,BLOCKED,,nearest 1.08 m > 0.50 m
+304,107.202,STRAIGHT,0.0,1.055,L0 C0 R0 /8,,-20,BLOCKED,,nearest 1.05 m > 0.50 m
+305,107.302,STRAIGHT,0.0,1.051,L0 C0 R0 /8,,,BLOCKED,,nearest 1.05 m > 0.50 m
+306,107.502,STRAIGHT,0.0,0.993,L0 C0 R0 /8,,,BLOCKED,,nearest 0.99 m > 0.50 m
+307,107.702,STRAIGHT,0.0,0.969,L0 C0 R0 /8,,,BLOCKED,,nearest 0.97 m > 0.50 m
+308,107.802,STRAIGHT,0.0,0.923,L0 C0 R0 /8,,,BLOCKED,,nearest 0.92 m > 0.50 m
+309,108.002,STRAIGHT,0.0,0.869,L0 C0 R0 /8,,-30 +20,BLOCKED,,nearest 0.87 m > 0.50 m
+310,108.502,STRAIGHT,0.0,0.504,L0 C0 R0 /8,,-30 -20 +20 +30,BLOCKED,,nearest 0.50 m > 0.50 m
+311,108.602,STRAIGHT,0.0,0.547,L0 C0 R0 /8,,+20 +30,BLOCKED,,nearest 0.55 m > 0.50 m
+312,108.802,STRAIGHT,0.0,0.641,L0 C0 R0 /8,,-30 +20,BLOCKED,,nearest 0.64 m > 0.50 m
+313,108.902,STRAIGHT,0.0,0.649,L0 C0 R0 /8,,-30,BLOCKED,,nearest 0.65 m > 0.50 m
+314,109.102,STRAIGHT,0.0,0.637,L0 C0 R0 /8,,-30 +30,BLOCKED,,nearest 0.64 m > 0.50 m
+315,109.202,STRAIGHT,0.0,0.614,L0 C0 R0 /8,,-30,BLOCKED,,nearest 0.61 m > 0.50 m
+316,109.402,STRAIGHT,0.0,0.547,L0 C0 R0 /8,,-30,BLOCKED,,nearest 0.55 m > 0.50 m
+317,109.602,STRAIGHT,0.0,0.491,L0 C152 R0 /8,,-30,BLOCKED,,"something 0.49 m RIGHT IN FRONT, not a clip (L 0 / C 152 / R 0 (need 8)): ignored"
+318,109.702,STRAIGHT,0.0,0.46,L292 C1522 R0 /8,,-30,BLOCKED,,"something 0.46 m RIGHT IN FRONT, not a clip (L 292 / C 1522 / R 0 (need 8)): ignored"
+319,109.902,STRAIGHT,0.0,0.389,L2445 C883 R0 /8,,-30 -20 -10,BLOCKED,,"something 0.39 m RIGHT IN FRONT, not a clip (L 2445 / C 883 / R 0 (need 8)): ignored"
+320,110.002,HOLD,0.0,0.389,L228 C0 R0 /8,3/3,-30 -20 -10 +0,BLOCKED,,clip on the LEFT prop at 0.39 m (L 228 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.354): clip too deep for one sidestep
+321,110.202,HOLD,0.0,0.402,L40 C0 R0 /8,3/3,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,clip on the LEFT prop at 0.40 m (L 40 / C 0 / R 0 (need 8)); 10 deg right not clear for 0.6 m (0.371): clip too deep for one sidestep
+322,110.402,STRAIGHT,0.0,,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nothing in the box
+323,110.502,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+324,110.702,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+325,110.802,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+326,111.1022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+327,111.3022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+328,111.5022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+329,111.8022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+330,111.9022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+331,112.1022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+332,112.3022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+333,112.4022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+334,112.6022,STRAIGHT,0.0,,L0 C0 R0 /8,,-30 -20,CLEAR,,nothing in the box
+335,112.7022,STRAIGHT,0.0,2.488,L0 C0 R0 /8,,-30,CLEAR,,nearest 2.49 m > 0.50 m
+336,112.9022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+337,113.0022,STRAIGHT,0.0,,L0 C0 R0 /8,,+0,CLEAR,,nothing in the box
+338,113.2022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+339,113.4022,STRAIGHT,0.0,2.462,L0 C0 R0 /8,,-20 -10 +0 +10 +20 +30,CLEAR,,nearest 2.46 m > 0.50 m
+340,113.5022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+341,113.8022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+342,114.0022,STRAIGHT,0.0,2.437,L0 C0 R0 /8,,,CLEAR,,nearest 2.44 m > 0.50 m
+343,114.2022,STRAIGHT,0.0,,L0 C0 R0 /8,,,CLEAR,,nothing in the box
+344,114.3022,STRAIGHT,0.0,2.317,L0 C0 R0 /8,,+20,CLEAR,,nearest 2.32 m > 0.50 m
+345,114.5022,STRAIGHT,0.0,,L0 C0 R0 /8,,+20,CLEAR,,nothing in the box
+346,114.6022,STRAIGHT,0.0,2.488,L0 C0 R0 /8,,,CLEAR,,nearest 2.49 m > 0.50 m
+347,114.8022,STRAIGHT,0.0,,L0 C0 R0 /8,,-10 +0 +30,BLOCKED,,nothing in the box
+348,115.1022,STRAIGHT,0.0,1.791,L0 C0 R0 /8,,-30 -20 -10 +0,BLOCKED,,nearest 1.79 m > 0.50 m
+349,115.3022,STRAIGHT,0.0,1.665,L0 C0 R0 /8,,+20,BLOCKED,,nearest 1.67 m > 0.50 m
+350,115.4022,STRAIGHT,0.0,1.63,L0 C0 R0 /8,,-30 -20 -10,BLOCKED,,nearest 1.63 m > 0.50 m
+351,115.6022,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,,BLOCKED,,nearest 1.64 m > 0.50 m
+352,115.7022,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,,BLOCKED,,nearest 1.64 m > 0.50 m
+353,115.9022,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,,BLOCKED,,nearest 1.64 m > 0.50 m
+354,116.0022,STRAIGHT,0.0,1.597,L0 C0 R0 /8,,+20,BLOCKED,,nearest 1.60 m > 0.50 m
+355,116.2022,STRAIGHT,0.0,1.653,L0 C0 R0 /8,,,BLOCKED,,nearest 1.65 m > 0.50 m
+356,116.4022,STRAIGHT,0.0,1.653,L0 C0 R0 /8,,,BLOCKED,,nearest 1.65 m > 0.50 m
+357,119.1024,STRAIGHT,0.0,1.653,L0 C0 R0 /8,,,BLOCKED,,nearest 1.65 m > 0.50 m
+358,119.2024,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,,BLOCKED,,nearest 1.64 m > 0.50 m
+359,119.3024,STRAIGHT,0.0,1.642,L0 C0 R0 /8,,,BLOCKED,,nearest 1.64 m > 0.50 m
+360,119.4024,STRAIGHT,0.0,1.777,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.78 m > 0.50 m
+361,119.5024,STRAIGHT,0.0,1.764,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.76 m > 0.50 m
+362,119.6024,STRAIGHT,0.0,1.764,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.76 m > 0.50 m
+363,119.7024,STRAIGHT,0.0,1.751,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.75 m > 0.50 m
+364,119.8024,STRAIGHT,0.0,1.725,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.73 m > 0.50 m
+365,119.9024,STRAIGHT,0.0,1.751,L0 C0 R0 /8,,-30 -20 -10 +0 +10 +20 +30,BLOCKED,,nearest 1.75 m > 0.50 m

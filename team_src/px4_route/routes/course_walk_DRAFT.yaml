@@ -1,26 +1,28 @@
-# Route from walk ../../drone_tests/walks/walk-20261107-215520/vio.csv, t = 13.0..59.0 s, simplified to within 0.1 m; all heights 0.9 m.
+# Route from walk ../../drone_tests/walks/walk-20261107-215520/vio.csv, t = 13.0..59.0 s, simplified to within 0.1 m; heights = the walk rangefinder at each waypoint (dips over obstacles ignored).
 # Start frame: metres from the takeoff point. x = forward (nose at takeoff), y = left, z = up.
 # Put the drone on the SAME spot, facing the SAME way, as when the walk started.
+# Pilot: Altitude -> arm -> Position. Kill switch is the only protection against drifting into a wall.
 name: course-walk-DRAFT
-takeoff_height: 0.90
+takeoff_height: 1.00     # walk heights from the rangefinder (hand-carried), not a fixed 0.9
 speed: 0.3
 corner_speed: 0.2
 max_height: 1.5
-max_cross_track: 0.4
+max_cross_track: 50.0     # off-path landing OFF (team decision 2026-11-08; the takeoff slide tripped 0.4 m)
+climb_speed: 0.5         # get through the low, sliding part of the takeoff faster
 yaw: fixed
 end: land
 waypoints:
-  - [0.61, -0.20, 0.90]
-  - [0.95, -0.61, 0.90]
-  - [1.85, -3.09, 0.90]
-  - [1.86, -4.30, 0.90]
-  - [0.85, -5.13, 0.90]
-  - [0.02, -5.05, 0.90]
-  - [-0.18, -5.26, 0.90]
-  - [-0.76, -5.32, 0.90]
-  - [-1.83, -5.22, 0.90]
-  - [-2.62, -5.27, 0.90]
-  - [-3.29, -4.81, 0.90]
-  - [-3.68, -3.73, 0.90]
-  - [-3.45, -2.30, 0.90]
-  - [-3.64, -0.69, 0.90]
+  - [0.61, -0.20, 1.02]
+  - [0.95, -0.61, 1.03]
+  - [1.85, -3.09, 1.07]
+  - [1.86, -4.30, 1.08]
+  - [0.85, -5.13, 1.02]
+  - [0.02, -5.05, 0.95]
+  - [-0.18, -5.26, 1.07]
+  - [-0.76, -5.32, 1.24]
+  - [-1.83, -5.22, 1.23]
+  - [-2.62, -5.27, 1.23]
+  - [-3.29, -4.81, 1.21]
+  - [-3.68, -3.73, 1.29]   # walk height; up for the window
+  - [-3.45, -2.30, 1.30]   # through the window at 1.3 m (walk passed over a ~0.9 m sill here)
+  - [-3.64, -0.69, 1.15]   # walk height, then land on the pad

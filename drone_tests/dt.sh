@@ -69,6 +69,12 @@ cmd_status() {
   stack_up && say "stack: running" || { say "stack: NOT running (systemctl status skybeta-stack)"; return; }
   local armed nav; read -r armed nav <<<"$(px4_state)"
   say "PX4: armed=$armed nav_state=$nav   (14 = Offboard; '?' = no FC link)"
+  local rc usb
+  rc=$(in_stack "timeout 6 ros2 topic echo --once --qos-reliability best_effort /fmu/out/failsafe_flags 2>/dev/null" \
+       | awk '/^manual_control_signal_lost:/ {print ($2=="false" ? "OK" : "LOST - transmitter off/unbound: do not fly")}')
+  usb=$(in_stack "timeout 6 ros2 topic echo --once --qos-reliability best_effort /fmu/out/vehicle_status_v1 2>/dev/null" \
+       | awk '/^usb_connected:/ {print ($2=="false" ? "unplugged (OK)" : "PLUGGED IN - unplug before flight")}')
+  say "RC: ${rc:-?}   Pixhawk USB: ${usb:-?}"
   say "camera mode file: $(camera_mode_file)   depth topic: $(has_depth && echo yes || echo no)"
   say "competitor window (last lines):"
   docker exec "$CONTAINER" tmux capture-pane -p -t "$SESSION:competitor" 2>/dev/null \

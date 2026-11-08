@@ -84,26 +84,51 @@ hardware in this order:
    takes over. Flight code **never** arms and never publishes to `/fmu/in/*`. The sim's
    `match_run.py` does both, so it does not run on the drone as it is.
 
-## 5. Boot mission: the square starts from power-on
+## 5. Boot mission: px4_square (no depth, no VIO height)
 
-`team_src/drone_mission` is a tiny ROS package whose launch file (`square.launch.py`) runs
-`hover.launch.py` with `square:=0.5`: the ONE flight_interface + `hover.py` (0.5 m climb, 1 s
-hover, 0.5 m square nose-first, LAND; LAND if depth < 0.35 m ahead). The flight code stays here
-in `drone_tests/`; the package only points at it.
+**Drone 18 runs WITHOUT depth mode.** Steps 3-4 above (depth profile, depth -> motors) and
+`hover.py` / `drone_mission` (which need depth) are retired for this drone.
+
+`team_src/px4_square` is the organisers' newest example square (climb 1.0 m above the switch
+point, hover 5 s, 0.5 m square counter-clockwise, then HOLD; the pilot lands) with no height
+from VIO anywhere:
+
+* the mission's start, targets and "arrived" checks use PX4's `/fmu/out/vehicle_local_position`
+  (height = rangefinder with baro backup, `EKF2_HGT_REF = 2`);
+* `flight_interface` runs with `anchor_setpoints: false` (targets are already in PX4's frame) and
+  `odometry_topic: /px4_square/odom`, a relay of PX4's position, so its 0.3 m floor / 2.0 m
+  ceiling are measured from PX4, not from VIO (the default VIO origin can rewrite a 1 m target to
+  "VIO origin + 0.3 m": the drone 7 climb);
+* no takeover unless PX4's position is fresh and valid and its height on the ground is within
+  0.3 m of zero (the node publishes nothing, so the pilot keeps Position).
+* change from the example: leg 1 points along the nose **at the switch** (PX4 heading), not VIO +x.
+
+VIO still reaches PX4 through the organisers' bridge; EKF2 must use it for horizontal + yaw only.
 
 ```
-drone_tests/install.sh skybeta-18 --boot       # laptop: also copies the package to ~/team_ws/src
-# on the drone:
-sudoedit /etc/skybeta/drone.env                # COMPETITOR_PKG=drone_mission
-                                               # COMPETITOR_LAUNCH=square.launch.py
-                                               # SKYBETA_SLAM_PROFILE=depth
-docker rm -f skybeta-stack                     # disarmed, on the ground, still (re-zeroes VIO)
-docker exec -it skybeta-stack tmux attach -t skybeta   # competitor window: "ready: ... Pilot: arm"
+drone_tests/install.sh skybeta-18 --boot       # laptop: ~/team_ws/src/px4_square, removes drone_mission
+# on the drone (disarmed, on the ground, still; team approves):
+cat ~/skybeta/VERSION
+rm -f ~/team_ws/slam_profile                    # depth mode file: gone
+sudoedit /etc/skybeta/drone.env                 # COMPETITOR_PKG=px4_square
+                                                # COMPETITOR_LAUNCH=px4_square.launch.py
+                                                # delete any SKYBETA_SLAM_PROFILE line
+git -C ~/skybeta status --short                 # if skybeta_depth640.patch was applied:
+#   git -C ~/skybeta apply -R --check ~/team_ws/drone_tests/skybeta_depth640.patch
+#   git -C ~/skybeta apply -R ~/team_ws/drone_tests/skybeta_depth640.patch
+docker exec skybeta-stack bash -c 'source skybeta_env.sh >/dev/null 2>&1; team_build.sh --packages-select px4_square'
+docker exec skybeta-stack bash -c 'source skybeta_env.sh >/dev/null 2>&1; ros2 launch px4_square px4_square.launch.py --show-args'
+docker rm -f skybeta-stack                      # restart (~2 min), re-zeroes VIO
+~/team_ws/drone_tests/dt.sh camera status       # depth OFF, 1024 wide
+docker exec -it skybeta-stack tmux attach -t skybeta   # competitor window: "px4_square ready ..."
 ```
 
-From then on, every boot loads the square. **Nothing flies until the pilot arms on Altitude and
-flips to Position**: that flip starts it. Arming with the switch already on Position is a hand
-flight. Back to the example: set `COMPETITOR_PKG=competitor_example` again. `bg.sh normal` now
-reloads this boot mission, and `bg.sh restore` still leaves no mission loaded until the next boot.
-`drone_tests/COLCON_IGNORE` stops the team build (which scans all of `~/team_ws`) from picking up
-anything in here.
+Before the first flight, on the flight controller (`loc_stack/preflight.sh` reads these):
+`EKF2_EV_CTRL = 9` (bit 1 = vision height must be OFF), `EKF2_HGT_REF = 2`, `EKF2_BARO_CTRL = 1`,
+`EKF2_RNG_CTRL = 1`, and EKF2 fusing vision (`cs_ev_pos`, `xy_valid`). Also re-check
+`flight_interface.py` on the drone (newer than the repo's 0.3.2) still uses `odometry_topic` only
+for the altitude band and honours `anchor_setpoints: false`.
+
+The flight: pilot arms on Altitude, flips to Position within a few seconds; the square runs and
+then holds; the pilot takes over and lands. Back to the stock example: `COMPETITOR_PKG=competitor_example`.
+`drone_tests/COLCON_IGNORE` keeps `drone_tests/` out of the team build.

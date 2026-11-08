@@ -4,7 +4,7 @@ Flown by `team_src/px4_route` (this commit) with `route_flown.yaml` (= `routes/c
 
 | | |
 |---|---|
-| Start | centred on the black X, nose along the floor line toward the pipe wall |
+| Start | **slightly behind the black X (less than 4 in / ~10 cm, per the team)**, nose along the floor line toward the pipe wall. The route assumes centred on the X, so the whole flight was ~0.1 m further back (away from the pipe wall) than planned. That margin probably helped near the forward net at waypoints 3–4. |
 | Route | 14 waypoints from the 21:55 course walk, 15.0 m, walk heights 0.95â€“1.30 m, 1.3 m at the window |
 | Mode | `yaw: path` (nose faces the way ahead, turns first), 0.3 m/s, corners 0.2 m/s, off-path landing off |
 | Result | **all 14 waypoints in 61.8 s, landed and disarmed by itself 0.12 m from waypoint 14 (the pad)** |

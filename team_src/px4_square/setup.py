@@ -22,7 +22,6 @@ setup(
     entry_points={
         'console_scripts': [
             'square_mission = px4_square.square_mission:main',
-            'px4_odom_relay = px4_square.px4_odom_relay:main',
         ],
     },
 )

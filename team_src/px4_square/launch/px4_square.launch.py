@@ -3,7 +3,8 @@
     COMPETITOR_PKG=px4_square
     COMPETITOR_LAUNCH=px4_square.launch.py
 
-Starts the ONE flight_interface (takeover on), the PX4 -> odometry relay and the square node.
+Starts the ONE flight_interface (takeover on) and the square node (px4_square/square_mission.py,
+the only mission file; it also relays PX4's position to /px4_square/odom).
 No height in this pipeline comes from VIO:
   * the mission's start, targets and arrival checks are PX4's local position;
   * anchor_setpoints is FALSE explicitly, so targets reach PX4 with only the ENU->NED flip;
@@ -18,8 +19,6 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
-        Node(package='px4_square', executable='px4_odom_relay',
-             name='px4_odom_relay', output='screen', emulate_tty=True),
         Node(package='skybeta_flight_interface', executable='flight_interface',
              name='flight_interface', output='screen', emulate_tty=True,
              parameters=[{

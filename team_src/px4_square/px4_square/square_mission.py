@@ -34,10 +34,37 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
 from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from px4_msgs.msg import VehicleLocalPosition
 
-from px4_square.geometry import ned_to_enu, square_corners_enu
+# flight_interface measures its altitude band (0.3 m floor, max_altitude_m ceiling) from the
+# first sample on its `odometry_topic`, which defaults to VIO. If VIO's height is off then, the
+# floor clamp can REWRITE a 1 m target to "VIO origin + 0.3 m" (drone 7: ~26 m). So this node
+# also republishes PX4's position here, and the launch file points odometry_topic at it.
+RELAY_TOPIC = '/px4_square/odom'
+
+
+def ned_to_enu(n, e, d):
+    """PX4 NED (x North, y East, z Down) -> ENU (x East, y North, z Up). flight_interface,
+    with anchor_setpoints off, sends ENU (x, y, z) to PX4 as NED (y, x, -z): the inverse."""
+    return (float(e), float(n), float(-d))
+
+
+def square_corners_enu(start_enu, heading_ned, side, height_up):
+    """Counter-clockwise square at height_up: leg 1 along the nose (PX4 heading = angle from
+    North towards East), then 90 deg left each corner, ending above the start."""
+    x0, y0, _ = start_enu
+    fx, fy = math.sin(heading_ned), math.cos(heading_ned)   # nose, in ENU
+    lx, ly = -fy, fx                                        # left of the nose, in ENU
+    s = float(side)
+    return [
+        (x0 + s * fx, y0 + s * fy, height_up),
+        (x0 + s * (fx + lx), y0 + s * (fy + ly), height_up),
+        (x0 + s * lx, y0 + s * ly, height_up),
+        (x0, y0, height_up),
+    ]
+
 
 PX4_QOS = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
                      durability=DurabilityPolicy.VOLATILE,
@@ -64,6 +91,7 @@ class Px4Square(Node):
         rate_hz = float(self.get_parameter('publish_rate_hz').value)
 
         self.pub = self.create_publisher(PoseStamped, '/skybeta/setpoint/pose', 10)
+        self.odom_pub = self.create_publisher(Odometry, RELAY_TOPIC, 10)
         self.create_subscription(String, '/skybeta/state', self.on_state, 10)
         self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position',
                                  self.on_lpos, PX4_QOS)
@@ -90,6 +118,15 @@ class Px4Square(Node):
     def on_lpos(self, msg):
         self.lpos = msg
         self.lpos_t = time.monotonic()
+        if msg.xy_valid and msg.z_valid:        # relay for flight_interface's altitude band
+            x, y, z = ned_to_enu(msg.x, msg.y, msg.z)
+            o = Odometry()
+            o.header.stamp = self.get_clock().now().to_msg()
+            o.header.frame_id = 'px4_local_enu'
+            o.child_frame_id = 'base_link'
+            o.pose.pose.position.x, o.pose.pose.position.y, o.pose.pose.position.z = x, y, z
+            o.pose.pose.orientation.w = 1.0
+            self.odom_pub.publish(o)
 
     def on_state(self, msg):
         try:

@@ -104,6 +104,7 @@ class RouteMission(Node):
         self.relay_hist = []         # (time, PX4 z) while waiting for it to be steady
         self.crash_count = 0
         self.offboard, self.armed = False, None
+        self.offboard_rise = False   # Offboard went False -> True and no flight has used it yet
         self.phase = 'WAIT'          # WAIT -> FLY -> (END_HOVER) -> LAND -> DONE -> WAIT on disarm
         self.path = self.carrot = None
         self.start = None
@@ -163,7 +164,16 @@ class RouteMission(Node):
             s = json.loads(msg.data)
         except ValueError:
             return
-        self.offboard = bool(s.get('offboard_active', False))
+        offboard = bool(s.get('offboard_active', False))
+        # A flight may start only on a FRESH switch into Offboard (False -> True). PX4 stays in
+        # Offboard after landing and disarming; without this the node took that as a new
+        # takeover and started the route again while disarmed (drone 18, 2026-11-08 01:46), so
+        # re-arming without moving the mode switch would have taken off at once.
+        if offboard and not self.offboard:
+            self.offboard_rise = True
+        if not offboard:
+            self.offboard_rise = False
+        self.offboard = offboard
         self.armed = s.get('armed')
         clamped = [r for r in (s.get('clamped') or []) if r != 'min_altitude']
         if clamped and self.phase == 'FLY':
@@ -308,6 +318,13 @@ class RouteMission(Node):
                 return
             self.send(pos)                        # hold where we are; keeps the takeover possible
             return
+        if not (self.offboard_rise and self.armed is True):
+            # Offboard left over from the last flight (PX4 stays in it after disarming), or not
+            # armed: do not start, do not offer anything.
+            self.event('Offboard is still active from before (or not armed): not starting. '
+                       'Pilot: switch to Altitude, arm, then switch to Position.', warn=True, every=5.0)
+            return
+        self.offboard_rise = False                # this switch is used up
         heading = float(self.lpos.heading)
         if not math.isfinite(heading):
             self.land('PX4 heading not valid at takeoff')

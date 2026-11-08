@@ -12,10 +12,12 @@ inside EKF2 and only for horizontal position + yaw (EKF2_EV_CTRL = 9); PX4 heigh
 rangefinder with the baro as backup (EKF2_HGT_REF = 2). No depth camera is used.
 
 Mission (same as the example): wait for Offboard, climb to 1.0 m above where Offboard started,
-hover 5 s, fly a 0.5 m square counter-clockwise (leg 1 along the nose at the switch), hold.
-It does not land: the safety pilot takes over and lands.
+hover 5 s, fly a 0.5 m square counter-clockwise (leg 1 along the nose at the switch), then
+LAND (the example only held): a straight-down twist on /skybeta/setpoint/twist at LAND_MPS,
+refreshed every tick until PX4 disarms. Twists are used because poses are floored at 0.3 m.
+A corner not reached within corner_timeout_s also lands. The pilot can take over at any time.
 
-Contract: publishes /skybeta/setpoint/pose only. Never publishes /fmu/in/*, never arms, never
+Contract: publishes /skybeta/setpoint/pose and /skybeta/setpoint/twist only. Never publishes /fmu/in/*, never arms, never
 changes mode. Run with exactly one flight_interface, anchor_setpoints FALSE (see the launch
 file): the ENU numbers sent here are PX4's local frame converted to ENU, so anchoring would
 shift them by the VIO origin and break that.
@@ -33,7 +35,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from px4_msgs.msg import VehicleLocalPosition
@@ -70,6 +72,7 @@ PX4_QOS = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
                      durability=DurabilityPolicy.VOLATILE,
                      history=HistoryPolicy.KEEP_LAST, depth=1)
 LPOS_STALE_S = 0.5      # PX4 local position older than this = no position
+LAND_MPS = 0.3          # descent speed while landing (m/s, straight down)
 GROUND_Z_MAX_M = 0.3    # |PX4 height| on the ground before a takeover is allowed
 
 
@@ -91,6 +94,7 @@ class Px4Square(Node):
         rate_hz = float(self.get_parameter('publish_rate_hz').value)
 
         self.pub = self.create_publisher(PoseStamped, '/skybeta/setpoint/pose', 10)
+        self.twist_pub = self.create_publisher(TwistStamped, '/skybeta/setpoint/twist', 10)
         self.odom_pub = self.create_publisher(Odometry, RELAY_TOPIC, 10)
         self.create_subscription(String, '/skybeta/state', self.on_state, 10)
         self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position',
@@ -228,19 +232,29 @@ class Px4Square(Node):
             self.corner_index += 1
             self.corner_started_at = self.now_s()
             if self.corner_index >= len(self.corners):
-                self.state = 'HOLD'
-                self.get_logger().info('square complete: holding. Pilot takes over and lands.')
+                self.state = 'LAND'
+                self.get_logger().info(f'square complete: landing at {LAND_MPS:.1f} m/s')
             else:
                 self.get_logger().info(f'corner reached: next {self.corner_index + 1}/'
                                        f'{len(self.corners)}')
             return
         if self.now_s() - self.corner_started_at > self.corner_timeout:
             self.get_logger().error(f'corner {self.corner_index + 1} not reached in '
-                                    f'{self.corner_timeout:.0f} s: holding')
-            self.state = 'HOLD'
+                                    f'{self.corner_timeout:.0f} s: landing here')
+            self.state = 'LAND'
 
-    def _state_hold(self, pos):
-        self.send(*self.corners[-1])
+    def _state_land(self, pos):
+        # Straight down, no horizontal velocity, no yaw rate. Sent every tick: a twist expires
+        # after 1 s (then flight_interface holds), so this keeps descending until PX4's land
+        # detector disarms; Offboard then ends and tick() resets for the next arming.
+        m = TwistStamped()
+        m.header.stamp = self.get_clock().now().to_msg()
+        m.header.frame_id = 'odom'
+        m.twist.linear.z = -LAND_MPS
+        self.twist_pub.publish(m)
+        if pos[2] - self.start[2] < 0.15:
+            self.warn_every('touchdown', 'near the ground: waiting for PX4 to detect the '
+                                         'landing and disarm', every=3.0)
 
 
 def main(args=None):

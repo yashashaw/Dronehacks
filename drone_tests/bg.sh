@@ -5,7 +5,11 @@
 #   ~/team_ws/drone_tests/bg.sh pulse         15 % for 4 s, then off
 #   ~/team_ws/drone_tests/bg.sh log           show the output (run again until it says DONE)
 #
-#   ~/team_ws/drone_tests/bg.sh hover         PROPS ON flight: load hover.py (0.7 m, 5 s, land).
+#   ~/team_ws/drone_tests/bg.sh capture [S]   props off: record S s (default 60) of grayscale stereo
+#                                             video + IMU + VIO + PX4 to ~/team_ws/bags. Never arms.
+#   ~/team_ws/drone_tests/bg.sh stopcapture   stop a capture early
+#
+#   ~/team_ws/drone_tests/bg.sh hover        PROPS ON flight: load hover.py (0.7 m, 5 s, land).
 #                                             Nothing flies until the pilot arms + flips to Position.
 #   ~/team_ws/drone_tests/bg.sh hoverlog      what the hover node is saying
 #   ~/team_ws/drone_tests/bg.sh restore       put the normal competitor launch back
@@ -18,6 +22,16 @@ C=skybeta-stack
 E="source skybeta_env.sh >/dev/null 2>&1"
 
 case "${1:-}" in
+  capture)   # props-off data capture: grayscale stereo video + IMU + VIO + PX4. Never arms.
+    SECS="${2:-60}"; TS=$(date +%Y%m%d-%H%M%S); OUT=/root/team_ws/bags/capture-$TS
+    mkdir -p ~/team_ws/bags
+    docker exec -d $C bash -lc "source skybeta_env.sh; record_bag.sh --duration $SECS -o $OUT > $OUT.log 2>&1; chown -R $(id -u):$(id -g) $OUT $OUT.log; sync"
+    echo "recording $SECS s -> ~/team_ws/bags/capture-$TS  (~2.4 GB/min). Stop early: $0 stopcapture"
+    exit 0 ;;
+  stopcapture)
+    docker exec $C pkill -INT -f "ros2 bag record" && sleep 5; sync
+    ls -dt ~/team_ws/bags/capture-* 2>/dev/null | head -1 | xargs -r du -sh
+    exit 0 ;;
   hover)   # load the hover flight into the competitor window; the PILOT starts it (arm, then Position)
     TS=$(date +%Y%m%d-%H%M%S)
     mkdir -p ~/team_ws/bags ~/team_ws/drone_tests/runs
@@ -41,7 +55,7 @@ case "${1:-}" in
   motors) shift; ARGS="--spin --props-off --seconds 15 $*" ;;
   pulse)  shift; ARGS="--pulse 0.15 --pulse-seconds 4 --spin --props-off $*" ;;
   run)    shift; ARGS="$*" ;;   # internal: the detached part
-  *) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
 
 if [[ "${BG_CHILD:-}" != 1 ]]; then

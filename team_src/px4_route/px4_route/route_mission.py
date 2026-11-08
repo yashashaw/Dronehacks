@@ -102,6 +102,7 @@ class RouteMission(Node):
         self.lpos, self.lpos_t = None, 0.0
         self.relay_ok = False        # see on_lpos: no relay until PX4 reads ~0 height on the ground
         self.relay_hist = []         # (time, PX4 z) while waiting for it to be steady
+        self.crash_count = 0
         self.offboard, self.armed = False, None
         self.phase = 'WAIT'          # WAIT -> FLY -> (END_HOVER) -> LAND -> DONE -> WAIT on disarm
         self.path = self.carrot = None
@@ -117,6 +118,12 @@ class RouteMission(Node):
 
     # ---------------- inputs ----------------
     def on_lpos(self, msg):
+        try:
+            self._on_lpos(msg)
+        except Exception as e:  # noqa: BLE001 -- a bad message must not kill the node
+            self.get_logger().error(f'on_lpos error {type(e).__name__}: {e}')
+
+    def _on_lpos(self, msg):
         self.lpos, self.lpos_t = msg, time.monotonic()
         # flight_interface takes its altitude band origin (0.3 m floor, max_altitude ceiling) from
         # the FIRST relayed sample. Right after boot PX4's height reads ~0.5 m off for a while
@@ -146,6 +153,12 @@ class RouteMission(Node):
             self.odom_pub.publish(o)
 
     def on_state(self, msg):
+        try:
+            self._on_state(msg)
+        except Exception as e:  # noqa: BLE001 -- a bad message must not kill the node
+            self.get_logger().error(f'on_state error {type(e).__name__}: {e}')
+
+    def _on_state(self, msg):
         try:
             s = json.loads(msg.data)
         except ValueError:
@@ -186,7 +199,12 @@ class RouteMission(Node):
         if every and now - self.last_warn.get(text[:40], -1e9) < every:
             return
         self.last_warn[text[:40]] = now
-        (self.get_logger().warn if warn else self.get_logger().info)(text)
+        # One severity per call site: rclpy (Humble) raises "Logger severity cannot be changed
+        # between calls" if the same line logs at two levels. That killed this node mid-flight.
+        if warn:
+            self.get_logger().warn(text)
+        else:
+            self.get_logger().info(text)
         if self.events:
             self.events.write(f'{time.strftime("%H:%M:%S")} {"WARN " if warn else ""}{text}\n')
             self.events.flush()
@@ -215,6 +233,23 @@ class RouteMission(Node):
 
     # ---------------- 10 Hz state machine ----------------
     def tick(self):
+        """Never let an exception kill the node: a dead node leaves flight_interface holding the
+        last pose, i.e. the drone hovering in Offboard until the pilot takes over (drone 18,
+        2026-11-08 01:13). Any error in the air -> land straight down, every tick."""
+        try:
+            self._tick()
+        except Exception as e:  # noqa: BLE001 -- deliberately everything
+            self.crash_count += 1
+            if self.crash_count <= 3:
+                self.get_logger().error(f'INTERNAL ERROR {type(e).__name__}: {e} -- landing if flying')
+            try:
+                if self.phase in ('FLY', 'END_HOVER', 'LAND'):
+                    self.phase = 'LAND'
+                    self.send_land()
+            except Exception:  # noqa: BLE001
+                pass
+
+    def _tick(self):
         now = time.monotonic()
         pos = self.position_enu()
 

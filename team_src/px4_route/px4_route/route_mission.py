@@ -40,6 +40,8 @@ from px4_msgs.msg import VehicleLocalPosition
 from px4_route.route import Carrot, Path, RouteError, load_route, start_frame_to_enu
 
 RELAY_TOPIC = '/px4_route/odom'
+RELAY_Z_MAX_M = 0.1      # relay (= flight_interface's altitude origin) starts only within this of 0
+RELAY_STEADY_S = 1.0     # ... continuously for this long
 PX4_QOS = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE,
                      history=HistoryPolicy.KEEP_LAST, depth=1)
 
@@ -95,6 +97,8 @@ class RouteMission(Node):
                                  self.on_lpos, PX4_QOS)
 
         self.lpos, self.lpos_t = None, 0.0
+        self.relay_ok = False        # see on_lpos: no relay until PX4 reads ~0 height on the ground
+        self.relay_since = None
         self.offboard, self.armed = False, None
         self.phase = 'WAIT'          # WAIT -> FLY -> (END_HOVER) -> LAND -> DONE -> WAIT on disarm
         self.path = self.carrot = None
@@ -111,6 +115,20 @@ class RouteMission(Node):
     # ---------------- inputs ----------------
     def on_lpos(self, msg):
         self.lpos, self.lpos_t = msg, time.monotonic()
+        # flight_interface takes its altitude band origin (0.3 m floor, max_altitude ceiling) from
+        # the FIRST relayed sample. Right after boot PX4's height reads ~0.5 m off for a while
+        # (drone 18, 2026-11-08: origin captured at 0.53 m -> floor 0.83 m, ceiling 2.53 m). So
+        # start relaying only once PX4 reads ~0 height on the ground, then relay continuously.
+        if not self.relay_ok:
+            if not (msg.xy_valid and msg.z_valid and abs(float(msg.z)) <= RELAY_Z_MAX_M):
+                self.relay_since = None
+                return
+            self.relay_since = self.relay_since or self.lpos_t
+            if self.lpos_t - self.relay_since < RELAY_STEADY_S:
+                return
+            self.relay_ok = True
+            self.get_logger().info(f'PX4 height {-float(msg.z):+.2f} m on the ground: relaying PX4 '
+                                   'position to flight_interface (its altitude band starts here)')
         if msg.xy_valid and msg.z_valid:          # relay: flight_interface's altitude band origin
             x, y, z = ned_to_enu(msg.x, msg.y, msg.z)
             o = Odometry()
@@ -238,6 +256,11 @@ class RouteMission(Node):
         if self.route is None:
             return                                # refused route: never offer a setpoint
         if not self.offboard:
+            if not self.relay_ok:
+                self.event(f'waiting for PX4 height to settle at ~0 (now {pos[2]:+.2f} m) before '
+                           "flight_interface's altitude band is set: publishing nothing, so no takeover",
+                           warn=True, every=2.0)
+                return
             if abs(pos[2]) > self.ground_z_max:
                 self.event(f'PX4 height {pos[2]:.2f} m is not ~0 on the ground: publishing nothing, '
                            'so no takeover', warn=True, every=2.0)

@@ -22,10 +22,11 @@ return_route: return_to_x.yaml   # RETURN ON (course_v2.yaml is the same course 
 waypoints:
   - [0.17, -0.20, 1.02]
   - [0.51, -0.61, 1.03]
-  - [0.67, -3.09, 1.07]   # 0.65 -> 0.67 (+2 cm)
+  - [0.77, -1.88, 1.05]   # NEW: at the 20:05 wall-hit spot, 10 in (0.25 m) forward of where it hit
+  - [0.77, -3.09, 1.07]   # was 0.67: same forward as the new waypoint (10 in past the wall hit)
   - [0.65, -4.30, 1.08]
   - [0.41, -5.13, 1.00]   # top-right corner, into the tunnel at 1.0 m
   - [-3.73, -5.13, 1.00]  # was 11: straight below 5, out of the tunnel at 1.0 m
   - [-4.12, -3.73, 1.29]  # was 12: rise for the window
   - [-3.89, -2.30, 1.30]  # was 13: through the window
-  - [-3.73, -0.62, 1.15]  # was 14 [-4.08, -0.69]: pad, then land. Moved 0.35 m toward the X, 0.07 m sideways (photo IMG_6209: landed off the pad centre)
+  - [-3.58, -0.45, 1.15]  # pad, then land. Was [-3.73, -0.62]: photos new_land_1/2 showed it 15 cm short and 17 cm toward the window

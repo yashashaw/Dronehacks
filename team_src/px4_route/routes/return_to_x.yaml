@@ -10,7 +10,7 @@
 # Landing target: within 2 ft (0.61 m) of the launch mark.
 name: return-to-X
 takeoff_height: 2.30     # climb straight up from the pad to this first
-speed: 0.3
+speed: 0.4               # was 0.3 (level legs and the straight-down leg over the X)
 corner_speed: 0.2
 climb_speed: 0.5
 max_height: 2.40         # needs flight_interface max_altitude_m 2.6 (the launch sets it when a return is on)

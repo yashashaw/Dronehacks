@@ -1,0 +1,28 @@
+# Course v2 (2026-11-08): the route that flew successfully at 14:39 (course_walk_DRAFT.yaml), simplified
+# by the team after watching it:
+#   - old waypoints 6-10 deleted: the right side is ONE straight forward/back line through the tunnel
+#     (old 6->7 jog nearly clipped the tunnel edge); old 11 moved straight below 5 (5.13 m right)
+#   - through the tunnel at 1.00 m; rises only at old 12 (now 7) for the window
+#   - waypoint 3 at 0.67 m forward (4 stays 0.65); window and pad unchanged (the window was perfect)
+# Start frame: metres from the X. x = forward (nose at takeoff, toward the pipe wall), y = left, z = up.
+# START: drone centred on the X (the 14:39 run was placed < 4 in behind it), nose along the floor line
+# toward the pipe wall. Pilot: Altitude -> arm -> Position. Kill switch is the protection against walls.
+name: course-v2
+takeoff_height: 1.00
+speed: 0.3
+corner_speed: 0.2
+max_height: 1.5
+max_cross_track: 50.0     # off-path landing OFF (team decision)
+climb_speed: 0.5
+yaw: path                 # nose faces the way ahead; turns in place first (20 deg), max 30 deg/s
+end: land
+waypoints:
+  - [0.17, -0.20, 1.02]
+  - [0.51, -0.61, 1.03]
+  - [0.67, -3.09, 1.07]   # 0.65 -> 0.67 (+2 cm)
+  - [0.65, -4.30, 1.08]
+  - [0.41, -5.13, 1.00]   # top-right corner, into the tunnel at 1.0 m
+  - [-3.73, -5.13, 1.00]  # was 11: straight below 5, out of the tunnel at 1.0 m
+  - [-4.12, -3.73, 1.29]  # was 12: rise for the window
+  - [-3.89, -2.30, 1.30]  # was 13: through the window
+  - [-3.73, -0.62, 1.15]  # was 14 [-4.08, -0.69]: pad, then land. Moved 0.35 m toward the X, 0.07 m sideways (photo IMG_6209: landed off the pad centre)

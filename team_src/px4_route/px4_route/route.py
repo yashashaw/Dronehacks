@@ -32,9 +32,19 @@ DEFAULTS = {
     'max_cross_track': 0.5,   # land if the drone is further than this from the path
     'yaw': 'fixed',           # fixed: keep the takeoff heading. path: face the direction of travel
     'yaw_rate_dps': 30.0,     # yaw: path turns no faster than this
+    'yaw_align_deg': 20.0,    # yaw: path -- the target waits until the nose is within this of the
+                              # way ahead (turn first, then move; VIO is camera-only and turns hurt it)
+    'yaw_lookahead': 0.5,     # yaw: path -- face along the path this far ahead (m), so short
+                              # walk legs do not make the nose jitter
     'end': 'land',            # land: land at the last waypoint. hold: hover there (pilot lands)
     'max_time_s': 170.0,      # land after this long, whatever happens (run limit is 3 min)
+    # Return to base (rule 7.10), OFF unless set: a second route file flown after this one has
+    # landed and PX4 has disarmed: the node re-arms, takes off and flies it. Its waypoints are in
+    # THIS route's start frame (metres from this route's takeoff point), so [0, 0, z] is the X.
+    # A relative name is looked up next to this file. '' = off.
+    'return_route': '',
 }
+TEXT_KEYS = ('name', 'yaw', 'end', 'return_route')
 
 
 class RouteError(ValueError):
@@ -66,8 +76,12 @@ def validate_route(raw):
     cfg = dict(DEFAULTS)
     cfg.update({k: v for k, v in raw.items() if k != 'waypoints'})
     for k in DEFAULTS:
-        if k not in ('name', 'yaw', 'end'):
+        if k not in TEXT_KEYS:
             cfg[k] = _num(cfg[k], k)
+    if cfg['return_route'] is None:
+        cfg['return_route'] = ''
+    if not isinstance(cfg['return_route'], str):
+        raise RouteError('return_route must be a file name (or empty for no return)')
     if cfg['yaw'] not in ('fixed', 'path'):
         raise RouteError('yaw must be "fixed" or "path"')
     if cfg['end'] not in ('land', 'hold'):
@@ -129,6 +143,21 @@ def load_route(path):
     return validate_route(raw)
 
 
+def load_return_route(main_path, main_route):
+    """The return route named by main_route.cfg['return_route'], or None when the return is off.
+    Raises RouteError if it is set but unusable (nothing should fly on a half-configured return)."""
+    import os
+    name = main_route.cfg.get('return_route') or ''
+    if not name:
+        return None
+    path = name if os.path.isabs(name) else os.path.join(os.path.dirname(os.path.abspath(main_path)), name)
+    ret = load_route(path)
+    if ret.cfg['return_route']:
+        raise RouteError(f'return route {path} has its own return_route: not allowed (one return only)')
+    ret.path = path
+    return ret
+
+
 def start_frame_to_enu(p, start_enu, heading_ned):
     """Start-frame point (forward, left, up from takeoff) -> PX4 local ENU (East, North, Up).
     heading_ned: PX4 heading at takeoff, radians from North towards East (the nose)."""
@@ -185,6 +214,23 @@ class Path:
     def direction_at(self, s):
         i, _ = self._leg(s)
         return _unit(self.p[i - 1], self.p[i])
+
+    def heading_ahead(self, s, look=0.5, min_horizontal=0.15):
+        """ENU yaw (rad) of the horizontal direction from point_at(s) to the first point at least
+        `look` m further along the path that is min_horizontal m away sideways, or None if the
+        rest of the path is (nearly) vertical, e.g. the takeoff climb or the final descent."""
+        a = self.point_at(s)
+        step = 0.05
+        t = s + look
+        while t <= self.length + step:
+            b = self.point_at(min(t, self.length))
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            if math.hypot(dx, dy) >= min_horizontal:
+                return math.atan2(dy, dx)
+            if t >= self.length:
+                break
+            t += step
+        return None
 
     def speed_at(self, s):
         i, s = self._leg(s)

@@ -1,0 +1,16 @@
+# OFF-COURSE TEST of the return: open floor only, at least 3 m clear ahead.
+# Hop: up 0.8 m, 1.5 m forward, land. Then (return_route) the node waits 3 s disarmed, RE-ARMS
+# BY ITSELF, flies back to the takeoff point at 0.8 m and lands there.
+# Start frame: metres from the takeoff point. x = forward (nose at takeoff), y = left, z = up.
+name: test-hop
+takeoff_height: 0.8
+speed: 0.25
+corner_speed: 0.15
+climb_speed: 0.5
+max_height: 1.2
+max_cross_track: 50.0
+yaw: fixed
+end: land
+return_route: test_hop_return.yaml
+waypoints:
+  - [1.5, 0.0, 0.8]

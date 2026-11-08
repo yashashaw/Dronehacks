@@ -6,7 +6,17 @@ Same pipeline as px4_square, which flew cleanly on drone 18:
   * ONE flight_interface, anchor_setpoints FALSE, odometry_topic = this node's relay of PX4's
     position (so its altitude band is measured from PX4's floor, not VIO's);
   * takeover only on the pilot's arm-on-Altitude -> switch-to-Position, with PX4 position fresh
-    and valid and PX4 height ~0 on the ground; this node never arms and never touches /fmu/in.
+    and valid and PX4 height ~0 on the ground. Without a return route this node never arms and
+    never touches /fmu/in.
+
+Return to base (rule 7.10), OFF unless the route file sets return_route: after the course has
+been COMPLETED (not aborted, not taken over), landed and auto-disarmed by PX4, the node waits
+return_delay_s on the pad, then sends ONE Offboard request and ONE arm command to PX4
+(/fmu/in/vehicle_command, as dronehacks-starter's takeoff_land.py and drone_tests/depth_motors.py
+do; retried at most twice), and flies the return route (waypoints in the course's start frame,
+so [0, 0, z] is the takeoff X) through the same carrot/landing code. Not armed in Offboard within
+return_arm_timeout_s -> disarm command and stop. Moving the mode switch out of Offboard on the
+pad cancels the return. PX4 auto-disarms ~10 s after arming if it never takes off.
 
 What is new:
   * the route comes from a YAML file (route.py has the format); it is in the START frame
@@ -35,9 +45,16 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
-from px4_msgs.msg import VehicleLocalPosition
+from px4_msgs.msg import VehicleCommand, VehicleLocalPosition, VehicleStatus
 
-from px4_route.route import Carrot, Path, RouteError, load_route, start_frame_to_enu
+from px4_route.route import (Carrot, Path, RouteError, load_return_route, load_route,
+                             start_frame_to_enu)
+
+
+def px4_out(name, msg_type):
+    """/fmu/out topic name for the installed px4_msgs generation (vehicle_status -> _v1)."""
+    v = int(getattr(msg_type, 'MESSAGE_VERSION', 0))
+    return '/fmu/out/' + name + (f'_v{v}' if v else '')
 
 RELAY_TOPIC = '/px4_route/odom'
 RELAY_Z_MAX_M = 0.25     # relay (= flight_interface's altitude origin) starts only within this of 0
@@ -69,7 +86,11 @@ class RouteMission(Node):
         self.declare_parameter('cross_track_hold_s', 0.5)  # this long beyond max_cross_track -> land
         self.declare_parameter('arrive_m', 0.2)           # at the last waypoint within this -> end
         self.declare_parameter('end_hover_s', 1.0)
+        self.declare_parameter('return_delay_s', 3.0)        # disarmed on the pad this long first
+        self.declare_parameter('return_arm_timeout_s', 5.0)  # armed in Offboard within this, or stop
         g = lambda n: self.get_parameter(n).value
+        self.return_delay = float(g('return_delay_s'))
+        self.return_arm_timeout = float(g('return_arm_timeout_s'))
         self.log_dir = g('log_dir')
         self.lead_base, self.kp = float(g('lead_base_m')), float(g('px4_xy_p'))
         self.land_mps, self.lpos_stale = float(g('land_mps')), float(g('lpos_stale_s'))
@@ -91,8 +112,32 @@ class RouteMission(Node):
                 f'end {self.route.cfg["end"]}. Pilot: arm on Altitude, then switch to Position.')
             for w in self.route.warnings:
                 self.get_logger().warn(w)
+        self.ret_route = None
+        if self.route:
+            try:
+                self.ret_route = load_return_route(g('route'), self.route)
+            except RouteError as e:
+                self.get_logger().error(f'RETURN ROUTE REFUSED, so the whole route is refused and '
+                                        f'nothing will fly: {e}')
+                self.route = None
+        if self.ret_route:
+            rc = self.ret_route.cfg
+            self.get_logger().warn(
+                f'RETURN ENABLED: after landing on the pad and disarming, wait {self.return_delay:.0f} s, '
+                f'RE-ARM BY ITSELF and fly "{self.ret_route.name}" ({len(self.ret_route.points) - 2} '
+                f'waypoints, climb to {rc["takeoff_height"]:.2f} m, max {rc["max_height"]:.2f} m) from '
+                f'{self.ret_route.path}. To cancel on the pad: move the mode switch off Position.')
+            for w in self.ret_route.warnings:
+                self.get_logger().info(f'return route: {w}')
 
         self.pub = self.create_publisher(PoseStamped, '/skybeta/setpoint/pose', 10)
+        # The PX4 command channel exists ONLY when a return route is configured.
+        self.cmd_pub = None
+        self.status = None
+        if self.ret_route:
+            self.cmd_pub = self.create_publisher(VehicleCommand, '/fmu/in/vehicle_command', PX4_QOS)
+            self.create_subscription(VehicleStatus, px4_out('vehicle_status', VehicleStatus),
+                                     lambda m: setattr(self, 'status', m), PX4_QOS)
         self.twist_pub = self.create_publisher(TwistStamped, '/skybeta/setpoint/twist', 10)
         self.odom_pub = self.create_publisher(Odometry, RELAY_TOPIC, 10)
         self.create_subscription(String, '/skybeta/state', self.on_state, 10)
@@ -112,6 +157,12 @@ class RouteMission(Node):
         self.xt_since = None
         self.yaw_cmd = None
         self.max_xt = 0.0
+        self.active = None           # the route being flown now: self.route, or self.ret_route
+        self.leg_complete = False    # the active route reached its last waypoint (not an abort)
+        self.on_return = False       # the return route is the one being flown / landed
+        self.course_start = self.course_heading = None   # takeoff pose of the course (the X)
+        self.t_pad = self.t_rearm = self.t_cmd = None
+        self.arm_tries = 0
         self.csv = self.events = None
         self.last_flush = 0.0
         self.last_warn = {}
@@ -256,6 +307,10 @@ class RouteMission(Node):
                 if self.phase in ('FLY', 'END_HOVER', 'LAND'):
                     self.phase = 'LAND'
                     self.send_land()
+                elif self.phase in ('PAD', 'REARM'):   # error while re-arming: do not take off
+                    self.phase = 'DONE'
+                    if self.cmd_pub is not None and self.armed is True:
+                        self.command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0)
             except Exception:  # noqa: BLE001
                 pass
 
@@ -266,8 +321,19 @@ class RouteMission(Node):
         if self.phase in ('LAND', 'DONE') and self.armed is False:
             if self.phase == 'LAND':
                 self.event('landed and disarmed: done')
+                if (self.ret_route and not self.on_return and self.leg_complete and self.offboard):
+                    # course COMPLETED and PX4 disarmed it on the pad -> return to base
+                    self.phase, self.t_pad, self.arm_tries = 'PAD', now, 0
+                    self.event(f'RETURN: on the pad, re-arming in {self.return_delay:.0f} s '
+                               '(mode switch off Position cancels)', warn=True)
+                    return
             self.close_logs()
             self.phase, self.path, self.carrot = 'WAIT', None, None
+            self.on_return = False
+            return
+        if self.phase in ('PAD', 'REARM'):
+            self.pad_step(now, pos)
+            self.log_row(now, pos)
             return
         if self.phase == 'LAND':
             if not self.offboard:
@@ -299,9 +365,74 @@ class RouteMission(Node):
             self.fly(now, pos)
         elif self.phase == 'END_HOVER':
             self.send(self.path.point_at(self.path.length), self.yaw_cmd)
-            if self.route.cfg['end'] == 'land' and now - self.t_end >= self.end_hover:
+            if self.active.cfg['end'] == 'land' and now - self.t_end >= self.end_hover:
                 self.land('route complete')
         self.log_row(now, pos)
+
+    # ---------------- return to base (only with return_route) ----------------
+    def command(self, cmd, p1=0.0, p2=0.0):
+        """One PX4 vehicle command, exactly as drone_tests/depth_motors.py sends it (proven on
+        drone 18: 'Armed by external command'). Only exists when a return route is set."""
+        m = VehicleCommand()
+        m.timestamp = self.get_clock().now().nanoseconds // 1000
+        m.command = int(cmd)
+        m.param1, m.param2 = float(p1), float(p2)
+        sysid = int(self.status.system_id) if self.status is not None else 1
+        m.target_system, m.target_component = sysid, 1
+        m.source_system, m.source_component = 1, 1
+        m.from_external = True
+        self.cmd_pub.publish(m)
+
+    def cancel_return(self, why):
+        self.event(f'RETURN CANCELLED: {why}', warn=True)
+        if self.armed is True and self.cmd_pub is not None:
+            self.command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0)
+        self.phase = 'DONE'                       # -> WAIT (and logs closed) once disarmed
+
+    def pad_step(self, now, pos):
+        if pos is None:
+            self.cancel_return('no valid PX4 position on the pad')
+            return
+        if not self.offboard:
+            self.cancel_return('mode switch moved off Offboard on the pad (pilot)')
+            return
+        self.send(pos)                            # hold right here (flight_interface floors it at 0.3 m)
+        if self.phase == 'PAD':
+            if now - self.t_pad < self.return_delay:
+                return
+            self.event('RETURN: requesting Offboard + ARM')
+            self.command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1.0, 6.0)
+            self.command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0)
+            self.phase, self.t_rearm, self.t_cmd, self.arm_tries = 'REARM', now, now, 1
+            return
+        # REARM
+        if self.armed is True and self.offboard:
+            self.start_return(pos)
+            return
+        if now - self.t_rearm > self.return_arm_timeout:
+            self.cancel_return(f'not armed in Offboard {self.return_arm_timeout:.0f} s after the request')
+            return
+        if now - self.t_cmd > 1.0 and self.arm_tries < 3:
+            self.command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0)
+            self.t_cmd, self.arm_tries = now, self.arm_tries + 1
+
+    def start_return(self, pos):
+        ret = self.ret_route
+        cfg = ret.cfg
+        floor = self.course_start[2]
+        up = (pos[0], pos[1], floor + cfg['takeoff_height'])
+        wps = [start_frame_to_enu(p, self.course_start, self.course_heading) for p in ret.points[2:]]
+        self.path = Path([pos, up] + wps, ret.speeds, cfg['corner_speed'], cfg['corner_angle_deg'],
+                         cfg['corner_radius'])
+        self.carrot = Carrot(self.path, self.lead_base, self.kp)
+        self.active, self.on_return, self.leg_complete = ret, True, False
+        self.start = (pos[0], pos[1], floor)      # heights are above the course floor
+        self.yaw_cmd = None
+        self.t_fly = self.t_last = time.monotonic()
+        self.xt_since, self.max_xt = None, 0.0
+        self.phase = 'FLY'
+        self.event(f'RETURN: armed in Offboard, flying "{ret.name}" ({self.path.length:.1f} m) back to '
+                   'the takeoff point', warn=True)
 
     def wait(self, pos):
         if self.route is None:
@@ -331,6 +462,8 @@ class RouteMission(Node):
             return
         cfg = self.route.cfg
         self.start = pos
+        self.course_start, self.course_heading = pos, heading
+        self.active, self.on_return, self.leg_complete = self.route, False, False
         enu = [start_frame_to_enu(p, pos, heading) for p in self.route.points]
         self.path = Path(enu, self.route.speeds, cfg['corner_speed'], cfg['corner_angle_deg'],
                          cfg['corner_radius'])
@@ -346,7 +479,7 @@ class RouteMission(Node):
                    f'({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f}), heading {math.degrees(heading):.0f} deg')
 
     def fly(self, now, pos):
-        cfg = self.route.cfg
+        cfg = self.active.cfg
         dt, self.t_last = now - self.t_last, now
         if now - self.t_fly > cfg['max_time_s']:
             self.land(f'{cfg["max_time_s"]:.0f} s in the air')
@@ -365,20 +498,28 @@ class RouteMission(Node):
         else:
             self.xt_since = None
 
-        target = self.carrot.step(dt, pos)
+        hold = False
         if cfg['yaw'] == 'path':
-            d = self.path.direction_at(self.carrot.s)
-            if math.hypot(d[0], d[1]) > 0.3:      # not on a mostly vertical leg
-                want = math.atan2(d[1], d[0])
+            # Nose (camera) along the way ahead. Turn first, then move: while the ACTUAL heading is
+            # more than yaw_align_deg off, the target point does not advance.
+            want = self.path.heading_ahead(self.carrot.s, cfg['yaw_lookahead'])
+            if want is not None:
+                if self.yaw_cmd is None:
+                    self.yaw_cmd = math.pi / 2 - float(self.lpos.heading)
                 err = math.atan2(math.sin(want - self.yaw_cmd), math.cos(want - self.yaw_cmd))
                 lim = math.radians(cfg['yaw_rate_dps']) * dt
                 self.yaw_cmd += max(-lim, min(lim, err))
+                actual = math.pi / 2 - float(self.lpos.heading)          # PX4 heading, as ENU yaw
+                off = abs(math.atan2(math.sin(want - actual), math.cos(want - actual)))
+                hold = off > math.radians(cfg['yaw_align_deg'])
+        target = self.path.point_at(self.carrot.s) if hold else self.carrot.step(dt, pos)
         self.send(target, self.yaw_cmd)
 
         if self.carrot.at_end() and math.dist(pos, target) < self.arrive_m:
             self.event(f'last waypoint reached in {now - self.t_fly:.1f} s, max cross-track '
                        f'{self.max_xt:.2f} m')
             self.phase, self.t_end = 'END_HOVER', now
+            self.leg_complete = True              # reached the end normally (not an abort)
             if cfg['end'] == 'hold':
                 self.event('end: hold. Hovering at the last waypoint; the pilot lands.')
 

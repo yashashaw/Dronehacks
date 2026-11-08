@@ -118,6 +118,32 @@ twice in a row.
 
 Scoring: finishing beats everything. A 64 s finish at 0.3 m/s still scores 35 + 20 × (fastest/64), far above any crash.
 
-## The return over the walls: open questions
-- **Re-arming:** checkpoint 5 needs **land AND disarm** on the pad, and the return needs an **autonomous takeoff** after that. This stack never arms (flight_interface has no arm, and `/fmu/in` is off limits), and the pilot may only kill. **Ask the organisers how the return re-arms** before building it.
-- **Height:** over the walls means above 1.73 m. Use a separate route file for the return, with `max_height` ~2.3 and the launch arg `max_altitude_m:=2.5`. Never use those values on the main run, where flying above the walls costs 85 % of a checkpoint.
+## Return to base (built, OFF by default)
+**Turn it on** by adding one line to the route file: `return_route: return_to_x.yaml`. A name without a path is looked up next to the route file. Without that line nothing below happens, and the node has **no** PX4 command channel at all.
+
+**What it does:**
+1. The course **completes** (not an abort, not a pilot takeover), lands, and PX4 auto-disarms (`COM_DISARM_LAND` 2 s). Checkpoint 5 is done.
+2. It waits `return_delay_s` (3 s) disarmed on the pad, holding a setpoint right there. **Moving the mode switch off Position on the pad cancels the return.**
+3. It sends **one** Offboard request and **one** arm command to `/fmu/in/vehicle_command`, the same way as `drone_tests/depth_motors.py` (proven on drone 18: "Armed by external command") and dronehacks-starter's `takeoff_land.py`. It retries at most twice. If it isn't armed in Offboard within `return_arm_timeout_s` (5 s), it sends disarm and stops.
+4. It flies the return route through the same carrot and landing code. Its waypoints are in the **course's** start frame, so `[0, 0, z]` is the X. Then it lands and PX4 auto-disarms.
+
+**`routes/return_to_x.yaml`:**
+- From the pad, straight up to **2.3 m**, then straight back to above the X, then down to 0.6 m, then land on the X (target within 0.61 m).
+- Course notes: walls and barrier 1.73 m, tunnel top 1.82 m, net 3.05 m.
+- With a return on, the launch automatically raises flight_interface's ceiling to **2.6 m**. The course part keeps its own route `max_height`.
+
+**Off-course test pair:** `routes/test_hop.yaml` (up 0.8 m, 1.5 m forward, land) returns with `test_hop_return.yaml` (back at 0.8 m, land). **Open floor only.** It is the only shipped route with the return turned on.
+
+**Check before relying on it:**
+- **Ask the organisers** that autonomous re-arming for the return is allowed. Their flight_interface guide says flight code never arms.
+- **Ask** whether the barrier was cut to 55 in.
+- **PX4 auto-disarms 10 s after arming without a takeoff** (`COM_DISARM_PRFLT`). The return climbs right away.
+- **RC must stay on** (`COM_RCL_EXCEPT` 0) and **sticks centred** (`COM_RC_OVERRIDE` 3).
+
+**Logic test, no ROS needed:** `python tools/sim_mission.py` (fake PX4 + strict rclpy logger). All scenarios pass:
+- return off: no commands
+- hop + return lands 6 cm from the start
+- arm refused: gives up
+- pilot takeover: no return
+- switch moved on the pad: cancelled
+- course + return lands on the X

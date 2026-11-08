@@ -11,13 +11,13 @@ corner_speed: 0.2
 max_height: 1.5
 max_cross_track: 50.0     # off-path landing OFF (team decision 2026-11-08; the takeoff slide tripped 0.4 m)
 climb_speed: 0.5         # get through the low, sliding part of the takeoff faster
-yaw: fixed
+yaw: path                # nose (camera) faces the way ahead; turns in place first (yaw_align_deg 20), max 30 deg/s
 end: land
 waypoints:
   - [0.17, -0.20, 1.02]
   - [0.51, -0.61, 1.03]
-  - [1.41, -3.09, 1.07]
-  - [1.42, -4.30, 1.08]
+  - [0.65, -3.09, 1.07]   # was 1.41 fwd: runs 12:29 + 12:36 were blocked by the net at ~1.0-1.4 m fwd here
+  - [0.65, -4.30, 1.08]   # was 1.42 fwd (same net)
   - [0.41, -5.13, 1.02]
   - [-0.42, -5.05, 0.95]
   - [-0.62, -5.26, 1.07]

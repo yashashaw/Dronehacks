@@ -6,8 +6,8 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from px4_route.route import (Carrot, Path, RouteError, load_route, start_frame_to_enu,  # noqa: E402
-                             validate_route)
+from px4_route.route import (Carrot, Path, RouteError, load_return_route, load_route,  # noqa: E402
+                             start_frame_to_enu, validate_route)
 
 ROUTES = os.path.join(os.path.dirname(__file__), '..', 'routes')
 
@@ -138,3 +138,36 @@ def sim(route_obj, kp=0.95, vmax=12.0, dt=0.05, lag_s=0.1):
 def test_sim_box_finishes_and_tracks():
     t, xt = sim(load_route(os.path.join(ROUTES, 'test_box.yaml')))
     assert t < 60 and xt < 0.25
+
+
+# ---------------- return to base ----------------
+def test_return_off_by_default():
+    for f in ('test_line.yaml', 'test_box.yaml', 'course_walk_DRAFT.yaml'):
+        p = os.path.join(ROUTES, f)
+        assert load_return_route(p, load_route(p)) is None, f
+
+
+def test_return_loads_relative_to_the_route_file():
+    p = os.path.join(ROUTES, 'test_hop.yaml')
+    ret = load_return_route(p, load_route(p))
+    assert ret.name == 'test-hop-return'
+    assert ret.path == os.path.join(os.path.dirname(os.path.abspath(p)), 'test_hop_return.yaml')
+
+
+def test_course_return_route_is_valid_and_high():
+    r = load_route(os.path.join(ROUTES, 'return_to_x.yaml'))
+    assert r.cfg['takeoff_height'] >= 2.0 and r.cfg['max_height'] <= 2.6
+    assert r.points[-1][:2] == (0.0, 0.0)                 # ends over the X
+
+
+def test_return_route_problems_refuse(tmp_path):
+    main = tmp_path / 'main.yaml'
+    main.write_text('waypoints: [[1, 0, 0.8]]\nreturn_route: missing.yaml\n')
+    with pytest.raises(RouteError, match='cannot read'):
+        load_return_route(str(main), load_route(str(main)))
+    (tmp_path / 'ret.yaml').write_text('waypoints: [[0, 0, 0.8]]\nreturn_route: main.yaml\n')
+    main.write_text('waypoints: [[1, 0, 0.8]]\nreturn_route: ret.yaml\n')
+    with pytest.raises(RouteError, match='one return only'):
+        load_return_route(str(main), load_route(str(main)))
+    with pytest.raises(RouteError, match='return_route'):
+        validate_route({'waypoints': [[1, 0, 0.8]], 'return_route': 5})

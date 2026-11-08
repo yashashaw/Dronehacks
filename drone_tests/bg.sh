@@ -9,9 +9,10 @@
 #                                             video + IMU + VIO + PX4 to ~/team_ws/bags. Never arms.
 #   ~/team_ws/drone_tests/bg.sh stopcapture   stop a capture early
 #
-#   ~/team_ws/drone_tests/bg.sh hover        PROPS ON flight: load hover.py (0.7 m, 5 s, land).
+#   ~/team_ws/drone_tests/bg.sh hover        PROPS ON flight: load hover.py (0.5 m, 1 s, land).
 #                                             Nothing flies until the pilot arms + flips to Position.
-#   ~/team_ws/drone_tests/bg.sh square [S]    same, then a S x S m square (default 0.5, max 1.0), land
+#   ~/team_ws/drone_tests/bg.sh square [S]    same, then a S x S m square nose-first (default 0.5, max 1.0), land;
+#                                             lands if depth sees anything < 0.35 m ahead
 #   ~/team_ws/drone_tests/bg.sh hoverlog      what the hover/square node is saying
 #   ~/team_ws/drone_tests/bg.sh restore       after landing: stop recording, unload (pilot only), sync
 #   ~/team_ws/drone_tests/bg.sh normal        put the boot-default competitor launch back
@@ -62,7 +63,7 @@ case "${1:-}" in
   motors) shift; ARGS="--spin --props-off --seconds 15 $*" ;;
   pulse)  shift; ARGS="--pulse 0.15 --pulse-seconds 4 --spin --props-off $*" ;;
   run)    shift; ARGS="$*" ;;   # internal: the detached part
-  *) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
 
 if [[ "${BG_CHILD:-}" != 1 ]]; then

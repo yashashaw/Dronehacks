@@ -83,3 +83,27 @@ hardware in this order:
    switches to Position; flight_interface (`auto_offboard_on_arm: true`, exactly one copy)
    takes over. Flight code **never** arms and never publishes to `/fmu/in/*`. The sim's
    `match_run.py` does both, so it does not run on the drone as it is.
+
+## 5. Boot mission: the square starts from power-on
+
+`team_src/drone_mission` is a tiny ROS package whose launch file (`square.launch.py`) runs
+`hover.launch.py` with `square:=0.5`: the ONE flight_interface + `hover.py` (0.5 m climb, 1 s
+hover, 0.5 m square nose-first, LAND; LAND if depth < 0.35 m ahead). The flight code stays here
+in `drone_tests/`; the package only points at it.
+
+```
+drone_tests/install.sh skybeta-18 --boot       # laptop: also copies the package to ~/team_ws/src
+# on the drone:
+sudoedit /etc/skybeta/drone.env                # COMPETITOR_PKG=drone_mission
+                                               # COMPETITOR_LAUNCH=square.launch.py
+                                               # SKYBETA_SLAM_PROFILE=depth
+docker rm -f skybeta-stack                     # disarmed, on the ground, still (re-zeroes VIO)
+docker exec -it skybeta-stack tmux attach -t skybeta   # competitor window: "ready: ... Pilot: arm"
+```
+
+From then on, every boot loads the square. **Nothing flies until the pilot arms on Altitude and
+flips to Position**: that flip starts it. Arming with the switch already on Position is a hand
+flight. Back to the example: set `COMPETITOR_PKG=competitor_example` again. `bg.sh normal` now
+reloads this boot mission, and `bg.sh restore` still leaves no mission loaded until the next boot.
+`drone_tests/COLCON_IGNORE` stops the team build (which scans all of `~/team_ws`) from picking up
+anything in here.

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>drone_mission</name>
+  <version>0.1.0</version>
+  <description>Boot mission: flight_interface + drone_tests/hover.py (0.5 m hover, 0.5 m nose-first square, depth land).</description>
+  <maintainer email="noreply@example.com">team</maintainer>
+  <license>MIT</license>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>skybeta_flight_interface</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -24,24 +24,49 @@ LOG=/tmp/drone_test.log
 C=skybeta-stack
 E="source skybeta_env.sh >/dev/null 2>&1"
 
+# What every recording keeps: both camera images + calibration, the IMU, VIO (odometry + status),
+# what the bridge sends PX4, and EVERY /fmu/out PX4 topic (height, rangefinder, position, attitude,
+# status...). One regex, matched as topics are discovered during the recording.
+# Why not the organisers' record_bag.sh: it builds its PX4 list ONCE at start from
+# `ros2 topic list`; with a broken ROS daemon that list came back empty and
+# capture-20261107-214621 silently recorded NO PX4 data at all.
+REC_RE='^(/oak/(left|right)/(image_raw|camera_info)|/oak/imu/data|/visual_slam/tracking/odometry|/visual_slam/status|/fmu/in/vehicle_visual_odometry|/fmu/out/.*)$'
+# the recorder process itself (not the `timeout` wrapper around it), so one Ctrl-C reaches it once
+BAG_PROC='^/usr/bin/python3 /opt/ros/humble/bin/ros2 bag record'
+
+# record OUT SECS LOGFILE: start a detached recording in the stack container (container paths),
+# stopped cleanly with SIGINT after SECS s; then check that PX4 topics are really in it.
+record() {
+  local out="$1" secs="$2" log="$3" n
+  docker exec -d $C bash -lc "$E; timeout -s INT $secs ros2 bag record -s mcap -e '$REC_RE' -o $out > $log 2>&1; chown -R $(id -u):$(id -g) $out $log; sync"
+  sleep 8
+  n=$(docker exec $C grep -c "Subscribed to topic '/fmu/out/" "$log" 2>/dev/null); n=${n:-0}
+  if [[ "$n" -gt 0 ]]; then
+    echo "recording: $n PX4 topics + cameras/IMU/VIO"
+  else
+    echo "WARNING: recording has NO PX4 topics after 8 s (PX4 link down? battery in? see $0 status / dt.sh status)."
+    echo "         It keeps listening and adds them if they appear. Log: ${log/#\/root/~}"
+  fi
+}
+
 case "${1:-}" in
   capture)   # props-off data capture: grayscale stereo video + IMU + VIO + PX4. Never arms.
     SECS="${2:-60}"; TS=$(date +%Y%m%d-%H%M%S); OUT=/root/team_ws/bags/capture-$TS
     mkdir -p ~/team_ws/bags
-    docker exec -d $C bash -lc "source skybeta_env.sh; record_bag.sh --duration $SECS -o $OUT > $OUT.log 2>&1; chown -R $(id -u):$(id -g) $OUT $OUT.log; sync"
-    echo "recording $SECS s -> ~/team_ws/bags/capture-$TS  (~2.4 GB/min). Stop early: $0 stopcapture"
+    record "$OUT" "$SECS" "$OUT.log"
+    echo "recording $SECS s -> ~/team_ws/bags/capture-$TS  (~6 GB/min). Stop early: $0 stopcapture"
     exit 0 ;;
   stopcapture)
-    docker exec $C pkill -INT -f "ros2 bag record" && sleep 5; sync
-    ls -dt ~/team_ws/bags/capture-* 2>/dev/null | head -1 | xargs -r du -sh
+    docker exec $C pkill -INT -f "$BAG_PROC" && sleep 5; sync
+    ls -dt ~/team_ws/bags/capture-*/ 2>/dev/null | head -1 | xargs -r du -sh
     exit 0 ;;
   hover|square)   # load the flight into the competitor window; the PILOT starts it (arm, then Position)
     if [[ "$1" == square ]]; then SQ="${2:-0.5}"; NAME=square; else SQ=0.0; NAME=hover; fi
     TS=$(date +%Y%m%d-%H%M%S)
     mkdir -p ~/team_ws/bags ~/team_ws/drone_tests/runs
-    docker exec $C pkill -INT -f "ros2 bag record" 2>/dev/null && sleep 3   # one bag at a time
-    # bag: cameras + IMU + VIO + bridge + every /fmu/out topic, max 10 min (~25 GB), kept in team_ws
-    docker exec -d $C bash -lc "source skybeta_env.sh; record_bag.sh --duration 600 -o /root/team_ws/bags/$NAME-$TS > /root/team_ws/drone_tests/runs/$NAME-$TS.bag.log 2>&1"
+    docker exec $C pkill -INT -f "$BAG_PROC" 2>/dev/null && sleep 3   # one bag at a time
+    # bag: cameras + IMU + VIO + bridge + every /fmu/out topic, max 10 min (~60 GB), kept in team_ws
+    record /root/team_ws/bags/$NAME-$TS 600 /root/team_ws/drone_tests/runs/$NAME-$TS.bag.log
     docker exec $C tmux respawn-window -k -t skybeta:competitor \
       "bash -lc 'source skybeta_env.sh; ros2 launch /root/team_ws/drone_tests/hover.launch.py square:=$SQ 2>&1 | tee /root/team_ws/drone_tests/runs/$NAME-$TS.log; exec bash'"
     sleep 8
@@ -51,7 +76,7 @@ case "${1:-}" in
     exit 0 ;;
   hoverlog) docker exec $C tmux capture-pane -p -J -t skybeta:competitor -S -200 | grep -v '^$' | grep -E 'hover_test|python3|LAND|ERROR|WARN' | tail -25; exit 0 ;;
   restore)   # stop the bag (flushes it), leave NO mission loaded (arming + Position = pilot only), sync
-    docker exec $C pkill -INT -f "ros2 bag record" && sleep 5 && echo "bag stopped"
+    docker exec $C pkill -INT -f "$BAG_PROC" && sleep 5 && echo "bag stopped"
     docker exec $C tmux respawn-window -k -t skybeta:competitor "bash -c 'echo [dt] no mission loaded: Position stays with the pilot; exec bash'"
     docker exec $C chown -R "$(id -u):$(id -g)" /root/team_ws/bags /root/team_ws/drone_tests/runs 2>/dev/null
     sync

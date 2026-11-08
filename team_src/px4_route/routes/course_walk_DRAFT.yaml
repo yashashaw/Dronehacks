@@ -1,0 +1,26 @@
+# Route from walk ../../drone_tests/walks/walk-20261107-215520/vio.csv, t = 13.0..59.0 s, simplified to within 0.1 m; all heights 0.9 m.
+# Start frame: metres from the takeoff point. x = forward (nose at takeoff), y = left, z = up.
+# Put the drone on the SAME spot, facing the SAME way, as when the walk started.
+name: course-walk-DRAFT
+takeoff_height: 0.90
+speed: 0.3
+corner_speed: 0.2
+max_height: 1.5
+max_cross_track: 0.4
+yaw: fixed
+end: land
+waypoints:
+  - [0.61, -0.20, 0.90]
+  - [0.95, -0.61, 0.90]
+  - [1.85, -3.09, 0.90]
+  - [1.86, -4.30, 0.90]
+  - [0.85, -5.13, 0.90]
+  - [0.02, -5.05, 0.90]
+  - [-0.18, -5.26, 0.90]
+  - [-0.76, -5.32, 0.90]
+  - [-1.83, -5.22, 0.90]
+  - [-2.62, -5.27, 0.90]
+  - [-3.29, -4.81, 0.90]
+  - [-3.68, -3.73, 0.90]
+  - [-3.45, -2.30, 0.90]
+  - [-3.64, -0.69, 0.90]

@@ -85,10 +85,10 @@ window and chicane do not match the built course.
 | Top edge at 1.41 m forward hit the net (12:29, 12:36) | Top edge moved to 0.65–0.67 m |
 | Rclpy logging bug killed the node in the air | One log severity per call site + crash-proof loop that lands on any error |
 | A new flight could start from leftover Offboard | Takeoff only on a fresh Offboard switch |
-| Landed off the pad centre | Pad waypoint corrected twice from overhead photos (drone size as the ruler) |
+| Landed 35 cm off the pad centre | Pad waypoint corrected from an overhead photo (drone size as the ruler) |
 | Ladder stands over the straight return line | Return routed around it at 2.3 m |
 | Return landing close to the net | Return lands 15 cm right of the launch mark |
-| Rear props touched a wall on the top edge at 0.5 m/s | Extra waypoint 10 in further from that wall; speed back to 0.3 |
+| Rear props touched a wall on the top edge at 0.5 m/s | Speed back to 0.3 (an extra waypoint further from that wall was tried, but only flown at 0.5) |
 
 ### 5. Speed
 
@@ -109,7 +109,7 @@ centimetres of margin on the top edge and at the tunnel exit, and the drone swin
 | Path | What |
 |---|---|
 | `team_src/px4_route/` | **The flight code**: route follower node, launch file, route files, tests, mission simulator |
-| `team_src/px4_route/routes/course_v2_return.yaml` | The course (10 waypoints, 0.3 / 0.2) with the return switched on |
+| `team_src/px4_route/routes/course_v2_return.yaml` | **The route that flew the course + return at 19:58** (9 waypoints, 0.3 / 0.2) |
 | `team_src/px4_route/routes/course_v2.yaml` | Same course without the return |
 | `team_src/px4_route/routes/return_to_x.yaml` | The return to base |
 | `drone_tests/` | Capture and status scripts, the course walk, flight records |

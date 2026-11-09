@@ -48,12 +48,32 @@ The run is scored on 5 checkpoints in order (35 points), speed, the window (+5) 
 
 ## Our approach
 
-### 1. Fly on PX4's own position, never on our own estimate
+### 1. How the drone knows where it is: camera for x/y, rangefinder for height, fused in PX4
 
-Our first autonomous attempts (with the organizers' example) **climbed into the net**: the example took its height
-from the camera tracking, while our PX4 uses the **rangefinder** for height (`EKF2_HGT_REF=2`) and the camera only
-for horizontal position and yaw (`EKF2_EV_CTRL=9`). The two disagreed, and the example kept commanding "up".
-Our route follower takes **every position, including height, from PX4's `vehicle_local_position`**.
+There is no GPS indoors (and the rules forbid it), so position comes from two sensors, combined by PX4's EKF2:
+
+```
+OAK-D stereo (mono 1024x640, ~30 fps) --> cuVSLAM visual odometry (camera only, IMU fusion off, ~30 Hz)
+        --> organizers' bridge --> /fmu/in/vehicle_visual_odometry --> PX4 EKF2: horizontal position (x, y) + heading
+downward rangefinder (+ barometer backup) -------------------------------> PX4 EKF2: height
+PX4 EKF2 --> /fmu/out/vehicle_local_position --> our route follower (every target and every "arrived" check)
+```
+
+- **x / y and heading come from the camera (VIO).** The drone's horizontal position is the camera's visual
+  odometry, fused by PX4 (`EKF2_EV_CTRL = 9`: vision horizontal position + yaw, vision height off).
+- **Height comes from the rangefinder** (`EKF2_HGT_REF = 2`, barometer as backup), never from the camera.
+- **Our code reads only PX4's fused position** (`vehicle_local_position`). It never reads the camera directly,
+  and it relays PX4's position to the organizers' `flight_interface` so the height limits are measured the same way.
+
+Why it's split like this:
+- Our first autonomous attempts (the organizers' example) **climbed into the net**: the example took its height from
+  the camera tracking, which disagreed with PX4's rangefinder height, so it kept commanding "up".
+- The camera's own height drifted badly (drone 7 climbed toward the ceiling on a 26 m VIO height error).
+- **Depth mode was turned off**: computing stereo depth on the drone made the visual odometry ~300 ms late, so EKF2
+  rejected it. **Recording camera images during flight** delayed it by 170–340 ms and made PX4's position jump, so
+  our capture script records only PX4 and odometry topics.
+- How good it is: on the 19:58 run PX4's position kept the drone a median **0.035 m** from the planned line,
+  including in the dark tunnel; at 0.5 m/s it still held 0.03–0.11 m.
 
 ### 2. A small waypoint follower: `team_src/px4_route`
 
@@ -104,6 +124,74 @@ centimetres of margin on the top edge and at the tunnel exit, and the drone swin
 
 ---
 
+## Also built: computer vision and planning (bench and simulation, not flown)
+
+The flown stack is a fixed route on PX4's position. In parallel the team built perception and planning that would
+let the drone find its own way. None of it was integrated into a flight; it was tested on recorded data and in
+simulation.
+
+### Landing-pad detector (YOLOv8n): [`team_project/cv/pad_detector_yolo`](team_project/cv/pad_detector_yolo)
+
+A one-class (`pad`) **YOLOv8n** detector trained from phone videos of the pad: hand-label a baseline, train, let the
+model pre-label the rest while a person corrects it, retrain, then test on a video it never saw (scripts `01_` to `07_`).
+
+| Model | Epochs | Precision | Recall | mAP50 | mAP50-95 |
+|---|---|---|---|---|---|
+| Colour | 100 | 0.993 | 0.875 | 0.875 | **0.775** |
+| Grayscale (like the OAK's mono cameras) | 50 | 0.993 | 0.875 | 0.875 | 0.741 |
+
+### Stereo-depth hazard bench: [`team_project/cv/hazard_depth`](team_project/cv/hazard_depth)
+
+The question: **"would flying straight hit something in the next 2 m?"** A hand-carried OAK stereo walk through the
+course was cut into a fixed 400-frame test set, each frame hand-labelled blocked/clear against a drone-sized tube
+(0.6 × 0.25 × 2 m). Algorithms that run on a Jetson CPU (OpenCV + NumPy) were scored on it:
+
+| Algorithm | Balanced accuracy (chance 0.333) | Correlation with the turns actually taken | Depth coverage |
+|---|---|---|---|
+| StereoBM 320×200 | 0.400 | 0.18 | 0.62 |
+| **StereoSGBM 320×200** | 0.388 | **0.25** | 0.77 |
+| Optical-flow nearness (mono) | 0.380 | 0.15 | 1.00 |
+
+Result: stereo depth on this course is only weakly predictive (best correlation 0.25), and turning depth on in the
+drone's camera pipeline delayed the visual odometry (see section 1). That is why the flown stack uses a fixed route.
+
+### Theta\* planner with frontier exploration: [`planner/`](planner)
+
+The drone starts with **no map**: each frame it turns depth readings and its pose into an occupancy grid, picks a
+goal at the edge of known space (or the pad once seen), plans an any-angle path with **Theta\*** (with a clearance
+cost), and follows it, backing off and re-planning if it gets stuck. Simulated only (depth and drift are simulated).
+
+Runs from 2026-11-08 (`python run_course_test.py`, `python run_closed_loop.py 3`):
+
+| Test | Result |
+|---|---|
+| Perfect map, launch → pad | 16 waypoints, 15.1 m, min clearance 0.28 m, planned in 0.4 s |
+| Same, window blocked (forced through Gate B) | 21 waypoints, 15.7 m, min clearance 0.28 m |
+| Closed loop, seed 0 (map built while flying) | landed, through the window, 0 touches, 53.8 s, drift 0.14 m |
+| Closed loop, seed 1 | landed, through the window, 0 touches, 56.2 s, drift 0.31 m |
+| Closed loop, seed 2 | landed, through the window, **1 touch** near the window, 58.1 s with penalty |
+
+<p align="center">
+  <img src="docs/planner_sim/default.png" width="300" alt="Theta* path on the course map">
+  <img src="docs/planner_sim/closed_loop_2.png" width="300" alt="Simulated closed-loop flight">
+  <br><sub>Left: Theta* on the perfect map (red path, grey = clearance margin). Right: a simulated flight that built
+  its own map (black = walls it saw, orange = walls it never saw, red = path flown)</sub>
+</p>
+
+Known limits (from the planner README): it fails ~1 flight in 6 at 4× the assumed drift, the 0.76 m flight height is
+fixed, and the depth noise numbers are guesses until measured on the drone.
+
+### Other simulation and integration work (archived)
+
+- **FlyX simulator waypoint runs with a scan matcher** (depth matched against the course walls):
+  [`archive/sim-waypoint-run`](https://github.com/yashashaw/Dronehacks/tree/archive/sim-waypoint-run). Best version
+  flew the full route through the window (at 0.76 m) and landed on the pad, 0.04 m from its centre by its own
+  estimate; it was graded fail only on wall clearance (0.25 m against a 0.28 m limit).
+- **Integration of the pad detector, a depth planner and the localization stack** into ROS packages
+  (`course_pipeline`, `team_planner`, `loc_stack`): [`archive/integration`](https://github.com/yashashaw/Dronehacks/tree/archive/integration). Not flown.
+
+---
+
 ## Repository map
 
 | Path | What |
@@ -114,6 +202,7 @@ centimetres of margin on the top edge and at the tunnel exit, and the drone swin
 | `team_src/px4_route/routes/return_to_x.yaml` | The return to base |
 | `drone_tests/` | Capture and status scripts, the course walk, flight records |
 | `planner/` | Theta* planner with frontier exploration (simulation only, never flown) |
+| `docs/planner_sim/` | Pictures from the planner simulation runs shown above |
 | `team_project/` | Team index: the workspace at 14:39, the CV work (YOLOv8n pad detector, stereo hazard bench), branch summaries |
 
 ## Flying it

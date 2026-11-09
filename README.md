@@ -1,242 +1,127 @@
-# Stanford DroneHacks 2026 — Challenge Reference
+# DroneHacks: drone 18 flies the course by itself
 
-> **Team project index: see [`team_project/`](team_project/README.md) for the code that flew, the CV runs and a map of every branch.**
+Autonomous indoor flight for the DroneHacks course on a Sky Beta drone (Jetson Orin Nano + Pixhawk 6C/PX4,
+OAK-D stereo camera, downward rangefinder). The drone takes off from the launch mark, flies the maze, the dark
+tunnel and the window, lands and disarms on the pad, then **re-arms by itself and flies back over the walls to
+the launch mark**.
 
-> Program the issued drone to fly an indoor obstacle course **autonomously, as fast as possible, with no GPS and no pilot input.**
-> Nov 6–8, 2026 · Drone net in Tresidder Oak · Questions: hello@stanfordhorizons.com
-
-| | |
-|---|---|
-| **Course** | Indoor, GPS-denied, 20 × 20 × 10 ft net |
-| **Score** | 100 = 60 run + 25 presentation + 15 generality (+25% return bonus on run points) |
-| **Prizes** | 5 awards, $15,000 total |
-| **Scored runs close** | Sun 4:00 PM PST |
+> The competition rules and course description that used to be this README are in
+> [`README-competition.md`](README-competition.md). Course measurements: [`README-course-dimensions.md`](README-course-dimensions.md).
 
 ---
 
-## Table of contents
-1. [The drone](#the-drone)
-2. [Software stack](#software-stack)
-3. [The course](#the-course)
-4. [Checkpoints](#checkpoints)
-5. [Scoring](#scoring)
-6. [Awards](#awards)
-7. [Timeline](#timeline)
-8. [Rules (condensed)](#rules-condensed)
-9. [Open questions](#open-questions)
+## Best results
+
+All times are from our own flight logs (takeoff to disarm). Official times are read by the referees from video.
+
+| Run (UTC, 2026-11-08) | What it did | Course time (to last waypoint) | Takeoff → disarm on pad | Return |
+|---|---|---|---|---|
+| **19:58** | **Full course + return to base** | **58.5 s** | **70 s** | Re-armed after 3 s, flew around the ladder at 2.3 m, came down **0.27 m** from the launch point |
+| 14:39 | First full autonomous course | 61.8 s | 74.7 s | (return not enabled) |
+
+- Tracking on the course: median **0.02–0.035 m** off the planned path (PX4's own position).
+- Speed that works: **0.3 m/s cruise, 0.2 m/s corners**. 0.5 m/s was tried three times and crashed every time:
+  see [`drone_tests/flights/2026-11-08_fast_runs_0.5`](drone_tests/flights/2026-11-08_fast_runs_0.5/README.md).
+
+Flight records with the exact route that flew, the logs and plots:
+[`14:39`](drone_tests/flights/2026-11-08_1439_course_success/) ·
+[`19:58`](drone_tests/flights/2026-11-08_1958_course_and_return/) ·
+[`0.5 m/s attempts`](drone_tests/flights/2026-11-08_fast_runs_0.5/)
 
 ---
 
-## The drone
+## How we met every point on the field test
 
-Every team flies the same drone ("Sky Beta"), pre-built, tuned and flight-tested.
+The run is scored on 5 checkpoints in order (35 points), speed, the window (+5) and the return (×1.25).
 
-**Data flow:** Camera sees → Jetson plans → Pixhawk stabilizes → ESCs drive → Motors make thrust.
-The Jetson sends position/velocity targets to the Pixhawk; the Pixhawk does the fast stabilizing corrections.
-
-| Part | Role | Key specs |
-|---|---|---|
-| **NVIDIA Jetson Orin Nano 8GB** | Companion computer — all our code runs here | 1024-core Ampere GPU, 32 tensor cores · 6-core Cortex-A78AE · 8 GB LPDDR5 (68 GB/s) · 40 TOPS INT8 (67 in Super mode) |
-| **Holybro Pixhawk 6C** (PX4) | Flight controller: attitude, rates, safety envelope | STM32H743 @ 480 MHz · 2 MB flash / 1 MB RAM · dual IMU (ICM-42688-P + BMI055) · BMP388 baro |
-| **Luxonis OAK-D S2** | Perception: stereo depth + on-device inference | 12 MP IMX378 colour (4056×3040) · 2× 1 MP global-shutter mono stereo · Myriad X VPU (4 TOPS) · metric depth from ~0.35 m |
-| **ST VL53L1X** (Holybro) | Downward ToF rangefinder → height above floor | Up to 4 m (less in bright light) · up to 50 Hz · 27° FoV (narrower with ROI) · 2.4 g |
-
-CAD (STEP of the assembled drone + OAK-D mount STL, mm, +Z up) is available from the challenge site for designing brackets/mounts.
-
----
-
-## Software stack
-
-Pre-installed on every drone:
-
-| Component | Where | Notes |
-|---|---|---|
-| PX4 Autopilot | Pixhawk 6C | Stock firmware, pre-flashed and tuned |
-| ROS 2 Humble | Jetson | PX4 messages + bridged uXRCE-DDS agent |
-| DepthAI + depthai-ros | Jetson | ROS 2 topics for RGB, depth, detections |
-| Starter repo | Laptop + Jetson | Offboard control node, depth-to-obstacle example, launch files, Gazebo sim |
-
-**Workflow**
-1. Write ROS 2 nodes for the Jetson; test in Gazebo on a laptop first.
-2. Read colour/depth/detections from the OAK-D topics (depth is computed on the camera).
-3. Fly via PX4 **offboard mode**: send position or velocity setpoints, read back the estimated state.
-4. Build on the starter project's flying baseline.
-
----
-
-## The course
-
-- Fills a **20 × 20 ft drone net, 10 ft tall**. Walls are **68 in tall, 4 in thick**. Boulders are **18 in across**.
-- Layout files: OBJ+MTL (zip), STEP, GLB — in metres; OBJ/STEP are Z-up, GLB is Y-up.
-- **Layout is preliminary.** Changes are posted on the site and in Slack before scored runs open. The drone must still localize and react to what it sees.
-
-**Stages, in order, from the launch mark:**
-1. **Maze** — navigate the corridors; a line on the floor marks the route.
-2. **Tunnel** — fly through the dark tunnel, the only way through the barrier.
-3. **Chicane** — enter the landing area via **Gate B** (north end) or the **window** in the lower wall (window = +5 on a finished run).
-4. **Landing** — land and disarm with the whole drone inside the pad's outer ring.
-5. **Bonus return** — take off again, fly back over the barrier, land within 2 ft of the launch mark.
-
-**Constraints**
-- Touching a wall, the tunnel or a boulder: **+5 s** per touch. A crash ends the run.
-- **Stay below the walls:** some part of the frame must always be below 68 in (except on the return). A checkpoint reached by going over a wall or the barrier earns only **15%** of its points.
-
-**Using the layout:** preloading a map built from the published layout is allowed. Hard-coding the course is allowed but costs generality points. Storing data from one run and feeding it into a later run is **not** allowed (rule 6.4).
-
----
-
-## Checkpoints
-
-The whole drone must cross a checkpoint's line. Checkpoints count only in order.
-
-| # | Checkpoint | Cleared when | Points |
+| # | Checkpoint (rules) | How our run clears it | Evidence |
 |---|---|---|---|
-| 1 | First corridor | Reaches the end of the first corridor, where the floor line turns east | 4 |
-| 2 | Maze | Leaves the maze where the line ends, through Gate A | 7 |
-| 3 | Tunnel | Comes out of the south end of the dark tunnel | 10 |
-| 4 | Chicane | Enters the landing area through Gate B or the window, without landing | 7 |
-| 5 | Landing | Lands and disarms with the whole drone inside the pad's outer ring | 7 |
-| | | **Total** | **35** |
+| 1 | **First corridor**: reach the end of the first corridor | Waypoints 1–2 follow the floor line out of the launch corridor and make the turn | Route built from a hand-carried walk along the floor line; 14:39 and 19:58 logs |
+| 2 | **Maze**: leave the maze through Gate A | The top edge (waypoints 2–5) runs along the maze corridor and exits toward the tunnel | Same; the top edge position was tuned after net and wall contacts (see below) |
+| 3 | **Tunnel**: come out of the south end of the dark tunnel | The tunnel is one straight leg at **1.0 m** (into the tunnel at the top-right corner, out at the bottom-right) | 19:58: 0.035 m median off the path through the tunnel |
+| 4 | **Chicane**: enter the landing area through the **window** | Rises to **1.3 m** and flies straight through the window (sill ~0.9 m) | Window crossing measured on the walk; flown cleanly at 14:39 and 19:58 (**+5 window bonus**) |
+| 5 | **Landing**: land and disarm with the whole drone inside the pad's outer ring | Flies level to the pad at 1.15 m, hovers 1 s, comes straight down; PX4 disarms 2 s after touchdown | 19:58: landed and disarmed 0.14 m from the pad waypoint. The scoring ring is 1.52 m across, so the 0.33 m drone has ~0.6 m of slack |
+| Rule | **Stay below the walls (68 in = 1.73 m)** on the run | Every course waypoint is 1.00–1.30 m; routes above 1.5 m are refused by the code | Height profile in every flight record |
+| Bonus | **Return (rule 7.10)**: after disarming on the pad, take off by itself, fly back over the barrier, land within 2 ft (0.61 m) of the launch mark, within 3 min | Waits 3 s, sends one Offboard + one ARM command, climbs **straight up to 2.3 m**, flies **around the ladder** (pad → R1 → R2 → over the launch mark), comes **straight down**, lands 15 cm to the right of the mark (away from the net) | 19:58: re-armed and flew the return; came down 0.27 m from the launch point. Whole run ~2 min, inside the 3 min limit |
 
 ---
 
-## Scoring
+## Our approach
 
-| Part | Points | What counts |
-|---|---|---|
-| The run | 60 | How far the drone gets, then how fast |
-| Technical presentation | 25 | Autonomy design, execution, originality, evidence of testing/iteration, use of auxiliary sensors |
-| Generality | 15 | How well the software would work on a different course (judged from Q&A + AI code review) |
-| Return bonus | +25% | Of run points, for the return to the launch mark |
+### 1. Fly on PX4's own position, never on our own estimate
 
-### Run points
+Our first autonomous attempts (with the organizers' example) **climbed into the net**: the example took its height
+from the camera tracking, while our PX4 uses the **rangefinder** for height (`EKF2_HGT_REF=2`) and the camera only
+for horizontal position and yaw (`EKF2_EV_CTRL=9`). The two disagreed, and the example kept commanding "up".
+Our route follower takes **every position, including height, from PX4's `vehicle_local_position`**.
 
-**Unfinished run**
-```
-checkpoint points reached + 7 × (fastest time to your last checkpoint / your time to it)
-```
-Reaching no checkpoint = 0. Clearing one more checkpoint always beats clearing fewer faster.
+### 2. A small waypoint follower: `team_src/px4_route`
 
-**Finished run**
-```
-checkpoint points (35 if all below walls) + 20 × (fastest finish / your finish) + 5 if via window
-```
-Every below-the-walls finish beats every unfinished run.
+- Waypoints are written as `[forward, left, up]` in metres **from the takeoff point**, so the route works wherever
+  the drone is placed (we place it ~4 in behind the X, nose toward the pipe wall).
+- A **"carrot"** target slides along the path at the planned speed, but only while the drone keeps up. The drone
+  follows the line instead of cutting corners. It slows to the corner speed near every turn and at the end.
+- **Nose forward** (`yaw: path`): the camera always looks where the drone is going. At corners it turns in place
+  first (within 20°) and turns at most 30°/s.
+- The only thing that talks to PX4 is the organizers' `flight_interface` (it clamps every target to a height band).
+- **Safety:** routes above 1.5 m (2.4 m for the return) or with bad numbers are refused before flight; any internal
+  error lands straight down; the node only takes over on a fresh Altitude → arm → Position sequence; every flight
+  writes a 10 Hz CSV and an event log.
+- 25 unit tests and a **mission simulator** (fake PX4 with arming, landing detection and auto-disarm) that runs
+  the real node code through course → pad → disarm → re-arm → return → disarm before anything is flown.
 
-**Return bonus:** finished run + completed return → run points × 1.25.
+### 3. The route came from walking the course
 
-**Over the walls:** affected checkpoints earn 15%; that run can never set the fastest reference time and can't win Fastest Run.
+We carried the running drone along the course's floor line and recorded PX4's position and the rangefinder
+(`drone_tests/walks/walk-20261107-215520`). That walk gave the waypoints and the heights: 1.0 m in the tunnel,
+1.3 m at the window (the rangefinder saw the sill at ~0.9 m). The CAD model was only used for rough overlays: its
+window and chicane do not match the built course.
 
-**Timing:** from leaving the launch mark, including touch penalties; compared against the fastest time to the same checkpoint by any team, by either route. Ties go to the faster run time.
+### 4. Then we fixed it from real flights
 
-### Worked examples (fastest finish = 60 s)
-
-| Scenario | Run points |
+| Problem seen | Fix |
 |---|---|
-| Finish in 90 s via Gate B | 35 + 20 × 60/90 = **48.3** |
-| Finish in 90 s via window | **53.3** |
-| Window + return | 53.3 × 1.25 = **66.7** |
-| Reach landing area in 50 s (fastest 45 s), crash on landing | 28 + 7 × 45/50 = **34.3** |
-| Only exit the maze, 40 s (fastest 30 s) | 11 + 7 × 30/40 = **16.3** |
+| Climbed into the net (organizers' example) | Own follower on PX4 position |
+| Top edge at 1.41 m forward hit the net (12:29, 12:36) | Top edge moved to 0.65–0.67 m |
+| Rclpy logging bug killed the node in the air | One log severity per call site + crash-proof loop that lands on any error |
+| A new flight could start from leftover Offboard | Takeoff only on a fresh Offboard switch |
+| Landed off the pad centre | Pad waypoint corrected twice from overhead photos (drone size as the ruler) |
+| Ladder stands over the straight return line | Return routed around it at 2.3 m |
+| Return landing close to the net | Return lands 15 cm right of the launch mark |
+| Rear props touched a wall on the top edge at 0.5 m/s | Extra waypoint 10 in further from that wall; speed back to 0.3 |
 
----
+### 5. Speed
 
-## Awards
-
-| Award | Prize | For |
-|---|---|---|
-| Rothberg Catalyzer Award | $7,000 | Highest overall score |
-| Runner-Up | $3,000 | Second-highest score |
-| Third Place | $2,000 | Third-highest score |
-| Most Technologically Impressive | $2,000 | Presentation + generality scores only |
-| Fastest Run | $1,000 | Fastest finished run below the walls, penalties included |
-
-Prizes are per team.
-
----
-
-## Timeline (PST)
-
-| When | What |
+| Speed / corners | Result |
 |---|---|
-| Fri 4:45 PM | Hacking begins (end of opening ceremony) |
-| Fri 7:50 PM | Oak opens: flight-net safety briefing + kit pickup |
-| Saturday | Build and practice in the nets |
-| Sat 7:30 PM | Scored-run blocks and presentation slots posted in Slack |
-| Sat 10 PM – Sun 2 AM | Scored runs (first half) |
-| Sun 8 AM – 4 PM | Scored runs (second half), then forfeited time |
-| **Sun 12:30 PM** | **Repo link due** |
-| Sun 12:30 – 3:10 PM | Technical presentations (two panels in parallel) |
-| **Sun 4:00 PM** | **Scored runs close; all flown code must be pushed** |
-| Sun 4:30 – 5:30 PM | Kit return |
-| Sun 6:00 PM | Closing ceremony + awards, Simonyi |
+| **0.3 / 0.2** | **Completed the course (14:39) and the course + return (19:58)** |
+| 0.5 / 0.3 | Hit the wall on the top edge (20:05); hit something after the tunnel exit (23:37) |
+| 0.5 / 0.2 | Hit something right after takeoff (23:44) |
+
+Camera tracking held 0.03–0.11 m at 0.5 m/s, so localization was not the limit. The course has only a few
+centimetres of margin on the top edge and at the tunnel exit, and the drone swings ~13 cm wider at corners at
+0.5 m/s. Details: [`drone_tests/flights/2026-11-08_fast_runs_0.5`](drone_tests/flights/2026-11-08_fast_runs_0.5/README.md).
 
 ---
 
-## Rules (condensed)
+## Repository map
 
-Full rulebook is on the challenge site. Organizers may amend rules during the event (announced in Slack). Head judge's decisions are final. When in doubt, ask before doing it.
+| Path | What |
+|---|---|
+| `team_src/px4_route/` | **The flight code**: route follower node, launch file, route files, tests, mission simulator |
+| `team_src/px4_route/routes/course_v2_return.yaml` | The course (10 waypoints, 0.3 / 0.2) with the return switched on |
+| `team_src/px4_route/routes/course_v2.yaml` | Same course without the return |
+| `team_src/px4_route/routes/return_to_x.yaml` | The return to base |
+| `drone_tests/` | Capture and status scripts, the course walk, flight records |
+| `planner/` | Theta* planner with frontier exploration (simulation only, never flown) |
+| `team_project/` | Team index: the workspace at 14:39, the CV work (YOLOv8n pad detector, stereo hazard bench), branch summaries |
 
-### Kit & hardware (rules 2–3)
-- One kit per team, signed out by the captain, returned complete Sun 4:30–5:30 PM.
-- Only fly the issued drone, propellers and batteries.
-- Core kit (frame, motors, ESCs, props, power, Jetson, Pixhawk, OAK-D, VL53L1X) must stay on and in use — no removing, replacing or bypassing.
-- **Re-mounting is allowed** (move/re-angle camera or rangefinder, print new brackets) — requires re-inspection.
-- No changes to motors, ESCs, props, battery or power wiring. **No additional computers.** Nothing else that draws power except auxiliary sensors.
+## Flying it
 
-### Auxiliary sensors (rule 4)
-- **Allowed**, each **< US$100 market value** and **< 50 g** (sensor as sold, incl. breakout/MCU needed to read it; cables/mounts excluded).
-- Market value = normal retail price new, not what we paid (a free $129 sensor is over the limit).
-- Declare at inspection: part number, price listing link, mass. Undeclared sensors can't fly.
-- Powered from the drone battery only.
-- They earn nothing by themselves; judges consider **how well we use them** in the presentation.
-- **Banned at any price:** GNSS, anything relying on off-drone equipment (UWB anchors, beacons, mocap), lasers above Class 1.
-
-### Autonomy (rule 5)
-- From the start command to the end: one start command, then **abort only** (kill or land).
-- No RC inputs, waypoints, mode changes or parameter changes mid-run. RC transmitter = kill switch only.
-- All perception, localization, planning and control on the drone. No laptop/server/cloud in the loop; laptop may monitor read-only.
-
-### Localization & mapping (rule 6)
-- No GNSS, even as fallback; PX4 GNSS input stays disabled.
-- No external positioning (mocap, UWB, Wi-Fi/BT ranging, beacons, markers) unless provided by organizers.
-- Don't place, move, mark or alter anything on the course.
-- **Preloaded maps OK** (including from the published layout). **Run data not OK:** no splats/point clouds/maps captured on one run and fed to a later one, no flight replays. Tuning code from what we learned is fine.
-
-### The run (rule 7)
-- Equal net time per team, in two blocks (one per half), 1.5 min changeover. Be at the net, charged, 10 min early — blocks start on time.
-- Fly as many runs as fit; **best run counts**. A run still airborne at block end is scored on checkpoints cleared.
-- Can forfeit the rest of a block; remaining time (minus 1.5 min) is added after Sunday's last block if it fits before 4 PM.
-- Clock: leaves launch mark → disarms on pad (or run ends). Filmed from above; checkpoint times read from video.
-- Each non-ending touch: +5 s to finish and every later checkpoint.
-- **Run ends on:** disarm on pad (no return attempt), crash, ground contact elsewhere, leaving the course, **3-minute limit**, team abort, referee stop, or any human input other than abort.
-- **Return (7.10):** after disarming on the pad, take off autonomously, fly over the barrier, land and disarm within 2 ft of the launch mark, all within 3 min. Failing the return loses only the bonus.
-
-### Safety (rule 8)
-- Everyone attends the safety briefing before flying.
-- Fly only in the closed net; never arm elsewhere; props off at the table.
-- A designated teammate watches every flight, ready on the kill switch. Kill immediately when an organizer says so.
-- Inspection before first flight and after any hardware change.
-- Don't touch the organizer's PX4 safety settings (failsafes, kill switch, geofence, battery limits).
-- Issued batteries only, charged only at the charging station, never unattended.
-
-### Software (rule 9)
-- Built during the event. Open-source libs, pretrained models, public datasets and the starter project are fine — **credit them in the README and presentation**.
-- AI coding tools are allowed; we must be able to explain how our code works.
-- Repo link due **Sun 12:30 PM**; everything flown pushed by **Sun 4:00 PM**.
-- Repo needs a README explaining the stack and how to run it.
-- An AI code review flags layout-specific hard-coding (fixed waypoints, routes, timings) for the judges, who weigh it in generality.
-
-### Fair play (rule 10)
-- Sharing ideas is fine; copying another team's code is not.
-- No interfering with other teams' drones, laptops, networks or radios.
-- No tampering with the course, timing or organizer equipment.
-- Misstating sensor price/mass, flying undeclared hardware, or flying code not in the repo by 4 PM = cheating.
-
----
-
-## Open questions
-
-- **Extra sensors:** rule 4 *does* allow them (< $100, < 50 g each, declared). They don't score points by being on the drone, but judges reward using them well.
-- **RL in the provided Gazebo sim:** is it fast/realistic enough for training, or is a classical stack (VIO + map-based planning) the better bet?
-- **If not RL, what's the alternative?**
+1. Copy the route to the drone as `~/team_ws/routes/route.yaml` (and `return_to_x.yaml` next to it), restart the
+   stack with the drone on the ground and disarmed: `docker rm -f skybeta-stack`.
+2. Place the drone ~4 in behind the X, nose toward the pipe wall. Power-cycle and leave it still while it boots.
+3. Check: `~/team_ws/drone_tests/dt.sh status` and the competitor window must show `route "course-v2-return"`,
+   `RETURN ENABLED` and `relaying PX4 position`.
+4. Transmitter: **Altitude → arm → Position**. Stay clear after it lands on the pad: it re-arms by itself ~5 s later.
+   Flip the mode switch off Position on the pad to cancel the return. Kill switch at any time.

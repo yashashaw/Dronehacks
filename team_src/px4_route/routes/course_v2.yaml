@@ -9,8 +9,8 @@
 # toward the pipe wall. Pilot: Altitude -> arm -> Position. Kill switch is the protection against walls.
 name: course-v2
 takeoff_height: 1.00
-speed: 0.5                # was 0.3 (2026-11-08 round 2: 0.5 / 0.3)
-corner_speed: 0.3         # was 0.2
+speed: 0.3                # 0.3 / 0.2 = the speeds that flew the full course + return (19:58). 0.5 was tried and crashed: see drone_tests/flights/2026-11-08_fast_runs_0.5
+corner_speed: 0.2
 max_height: 1.5
 max_cross_track: 50.0     # off-path landing OFF (team decision)
 climb_speed: 0.5

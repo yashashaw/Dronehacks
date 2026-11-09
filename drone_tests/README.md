@@ -1,8 +1,8 @@
 # drone_tests: real-drone tests, built up from the ground
 
-Branch `drone-tests`. Kept small on purpose: each test is one script, added only after the
-one before it works. Old field tests: branch `drone-field-tests` (drone 7). Sim results:
-branch `sim-waypoint-run`.
+Originally branch `drone-tests` (now merged into `main`). Kept small on purpose: each test is one script, added only after the
+one before it works. Old field tests: tag `archive/drone-field-tests` (drone 7). Sim results:
+tag `archive/sim-waypoint-run`.
 
 | File | Runs on | What |
 |---|---|---|
@@ -72,7 +72,7 @@ off (`COM_DISARM_PRFLT`). That is expected; run it again.
 
 ## Next tests (in order, each only after the last one is clean)
 
-The sim run on `sim-waypoint-run` (match_run v4: full route, window, pad) depends on depth
+The sim run on `archive/sim-waypoint-run` (match_run v4: full route, window, pad) depends on depth
 wall stops, a depth-vs-walls scan matcher, and VIO that holds through turns. Check those on
 hardware in this order:
 

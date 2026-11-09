@@ -1,4 +1,4 @@
-# DroneHacks: drone 18 flies the course by itself
+# DroneHacks: Team Long Harrier (drone 007/018) flies the course by itself
 
 Autonomous indoor flight for the DroneHacks course on a Sky Beta drone (Jetson Orin Nano + Pixhawk 6C/PX4,
 OAK-D stereo camera, downward rangefinder). The drone takes off from the launch mark, flies the maze, the dark
